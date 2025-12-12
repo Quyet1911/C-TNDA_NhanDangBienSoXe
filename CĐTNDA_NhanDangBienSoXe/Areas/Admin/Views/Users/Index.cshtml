@@ -1,0 +1,190 @@
+﻿@model IEnumerable<User>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<!-- Thông báo -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filter & Actions -->
+<div class="admin-table-card mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label"><i class="fas fa-search"></i> Tìm kiếm</label>
+            <input type="text" name="search" class="form-control" value="@ViewBag.Search" placeholder="Tên, email, họ tên..." />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label"><i class="fas fa-filter"></i> Trạng thái</label>
+            <select name="isActive" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="true" selected="@(ViewBag.IsActive == true)">Hoạt động</option>
+                <option value="false" selected="@(ViewBag.IsActive == false)">Ngừng hoạt động</option>
+            </select>
+        </div>
+        <div class="col-md-5 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Tìm kiếm
+            </button>
+            <a href="/Admin/Users" class="btn btn-secondary">
+                <i class="fas fa-redo"></i> Reset
+            </a>
+            <a href="/Admin/Users/Create" class="btn btn-success ms-auto">
+                <i class="fas fa-plus"></i> Thêm người dùng
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Users Table -->
+<div class="admin-table-card">
+    <div class="table-header">
+        <h3 class="table-title">
+            <i class="fas fa-users"></i>
+            Danh sách người dùng (@Model.Count())
+        </h3>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Họ tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td><strong>#@user.UserId</strong></td>
+                            <td>
+                                <strong>@user.UserName</strong>
+                                @if (user.UserName == User.Identity?.Name)
+                                {
+                                    <span class="badge bg-primary ms-1">Bạn</span>
+                                }
+                            </td>
+                            <td>@(user.FullName ?? "N/A")</td>
+                            <td>@(user.Email ?? "N/A")</td>
+                            <td>@(user.Phone ?? "N/A")</td>
+                            <td>
+                                @if (user.UserRoles != null && user.UserRoles.Any())
+                                {
+                                    foreach (var ur in user.UserRoles)
+                                    {
+                                        <span class="badge bg-info me-1">@ur.Role.Name</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Chưa có</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="status-badge @(user.IsActive ? "active" : "inactive")">
+                                    <i class="fas fa-circle"></i>
+                                    @(user.IsActive ? "Hoạt động" : "Ngừng")
+                                </span>
+                            </td>
+                            <td><small>@user.CreatedAt.ToString("dd/MM/yyyy")</small></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/Admin/Users/Details/@user.UserId" class="btn btn-sm btn-primary" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="/Admin/Users/Edit/@user.UserId" class="btn btn-sm btn-warning" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-info" onclick="toggleStatus(@user.UserId)" title="Bật/Tắt">
+                                        <i class="fas fa-power-off"></i>
+                                    </button>
+                                    @if (user.UserName != User.Identity?.Name)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteUser(@user.UserId, '@user.UserName')" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-users fa-3x mb-3"></i>
+            <p>Không tìm thấy người dùng nào</p>
+            <a href="/Admin/Users/Create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Thêm người dùng đầu tiên
+            </a>
+        </div>
+    }
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        // Toggle user status
+        function toggleStatus(id) {
+            if (confirm('Bạn có chắc muốn thay đổi trạng thái người dùng này?')) {
+                fetch(`/Admin/Users/ToggleStatus/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra!');
+                    }
+                })
+                .catch(error => {
+                    alert('Có lỗi xảy ra!');
+                    console.error(error);
+                });
+            }
+        }
+
+        // Delete user
+        function deleteUser(id, username) {
+            if (confirm(`Bạn có chắc muốn xóa người dùng "${username}"?\nHành động này không thể hoàn tác.`)) {
+                const form = document.getElementById('deleteForm');
+                form.action = `/Admin/Users/Delete/${id}`;
+                form.submit();
+            }
+        }
+    </script>
+}
+

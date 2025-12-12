@@ -1,0 +1,311 @@
+﻿@model DateRangeReportViewModel
+@{
+    ViewData["Title"] = "Báo cáo theo ngày";
+}
+
+<style>
+    .filter-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+    .recognition-table img {
+        max-width: 120px;
+        max-height: 80px;
+        border-radius: 5px;
+    }
+    .badge-direction-in {
+        background-color: #28a745;
+    }
+    .badge-direction-out {
+        background-color: #dc3545;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-calendar-alt"></i> Báo cáo theo ngày</h2>
+        <div>
+            <a href="@Url.Action("ExportCsv", new { startDate = Model.StartDate, endDate = Model.EndDate, period = "custom" })"
+               class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Xuất CSV
+            </a>
+            <a href="@Url.Action("Overview")" class="btn btn-secondary">
+                <i class="fas fa-chart-bar"></i> Báo cáo tổng hợp
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="filter-card">
+        <form method="get" action="@Url.Action("ByDate")" id="filterForm">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-calendar"></i> Từ ngày</label>
+                    <input type="date" name="startDate" class="form-control"
+                           value="@Model.StartDate.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-calendar"></i> Đến ngày</label>
+                    <input type="date" name="endDate" class="form-control"
+                           value="@Model.EndDate.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-video"></i> Camera</label>
+                    <select name="cameraId" class="form-select">
+                        <option value="">Tất cả</option>
+                        @if (ViewBag.Cameras != null)
+                        {
+                            foreach (var camera in ViewBag.Cameras)
+                            {
+                                <option value="@camera.CameraId" selected="@(Model.CameraId == camera.CameraId)">
+                                    @camera.Name
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-arrows-alt-h"></i> Hướng</label>
+                    <select name="direction" class="form-select">
+                        <option value="">Tất cả</option>
+                        <option value="In" selected="@(Model.Direction == "In")">Vào</option>
+                        <option value="Out" selected="@(Model.Direction == "Out")">Ra</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Lọc
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Summary -->
+    <div class="alert alert-info mb-4">
+        <div class="row">
+            <div class="col-md-8">
+                <i class="fas fa-info-circle"></i>
+                Tìm thấy <strong>@Model.TotalCount</strong> bản ghi
+                từ <strong>@Model.StartDate.ToString("dd/MM/yyyy")</strong>
+                đến <strong>@Model.EndDate.ToString("dd/MM/yyyy")</strong>
+            </div>
+            <div class="col-md-4 text-end">
+                Trang <strong>@Model.PageNumber</strong> / <strong>@Model.TotalPages</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    @if (Model.Recognitions.Any())
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive recognition-table">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th width="80px">#</th>
+                                <th>Thời gian</th>
+                                <th>Biển số</th>
+                                <th>Camera</th>
+                                <th>Hướng</th>
+                                <th>Độ tin cậy</th>
+                                <th>Vùng</th>
+                                <th>Hình ảnh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int rowNum = (Model.PageNumber - 1) * Model.PageSize + 1;
+                            }
+                            @foreach (var r in Model.Recognitions)
+                            {
+                                <tr>
+                                    <td>@rowNum</td>
+                                    <td>
+                                        <small>@r.DetectedAt.ToString("dd/MM/yyyy")</small><br />
+                                        <strong>@r.DetectedAt.ToString("HH:mm:ss")</strong>
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">@r.PlateNorm</strong>
+                                        @if (!string.IsNullOrEmpty(r.PlateTextRaw) && r.PlateTextRaw != r.PlateNorm)
+                                        {
+                                            <br /><small class="text-muted">(@r.PlateTextRaw)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (r.Camera != null)
+                                        {
+                                            <span>@r.Camera.Name</span>
+                                            @if (!string.IsNullOrEmpty(r.Camera.LocationNote))
+                                            {
+                                                <br /><small class="text-muted">@r.Camera.LocationNote</small>
+                                            }
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (r.Direction == "In")
+                                        {
+                                            <span class="badge badge-direction-in">
+                                                <i class="fas fa-arrow-right"></i> Vào
+                                            </span>
+                                        }
+                                        else if (r.Direction == "Out")
+                                        {
+                                            <span class="badge badge-direction-out">
+                                                <i class="fas fa-arrow-left"></i> Ra
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (r.Confidence.HasValue)
+                                        {
+                                            var confidence = r.Confidence.Value;
+                                            var badgeClass = confidence >= 80 ? "bg-success" :
+                                                            confidence >= 60 ? "bg-warning" : "bg-danger";
+                                            <span class="badge @badgeClass">
+                                                @confidence.ToString("F1")%
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(r.Region))
+                                        {
+                                            <span class="badge bg-info">@r.Region</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var imagePath = r.PlateCropPath ?? r.ImagePath;
+                                            if (!string.IsNullOrEmpty(imagePath))
+                                            {
+                                                <img src="@imagePath" alt="Plate" class="img-thumbnail" />
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Không có</span>
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                                rowNum++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <!-- Previous -->
+                            <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
+                                <a class="page-link"
+                                   href="@Url.Action("ByDate", new {
+                                       startDate = Model.StartDate,
+                                       endDate = Model.EndDate,
+                                       cameraId = Model.CameraId,
+                                       direction = Model.Direction,
+                                       page = Model.PageNumber - 1,
+                                       pageSize = Model.PageSize
+                                   })">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Pages -->
+                            @{
+                                int startPage = Math.Max(1, Model.PageNumber - 2);
+                                int endPage = Math.Min(Model.TotalPages, Model.PageNumber + 2);
+                            }
+
+                            @if (startPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("ByDate", new {
+                                        startDate = Model.StartDate,
+                                        endDate = Model.EndDate,
+                                        cameraId = Model.CameraId,
+                                        direction = Model.Direction,
+                                        page = 1,
+                                        pageSize = Model.PageSize
+                                    })">1</a>
+                                </li>
+                                @if (startPage > 2)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                }
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("ByDate", new {
+                                        startDate = Model.StartDate,
+                                        endDate = Model.EndDate,
+                                        cameraId = Model.CameraId,
+                                        direction = Model.Direction,
+                                        page = i,
+                                        pageSize = Model.PageSize
+                                    })">@i</a>
+                                </li>
+                            }
+
+                            @if (endPage < Model.TotalPages)
+                            {
+                                @if (endPage < Model.TotalPages - 1)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                }
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("ByDate", new {
+                                        startDate = Model.StartDate,
+                                        endDate = Model.EndDate,
+                                        cameraId = Model.CameraId,
+                                        direction = Model.Direction,
+                                        page = Model.TotalPages,
+                                        pageSize = Model.PageSize
+                                    })">@Model.TotalPages</a>
+                                </li>
+                            }
+
+                            <!-- Next -->
+                            <li class="page-item @(Model.PageNumber == Model.TotalPages ? "disabled" : "")">
+                                <a class="page-link"
+                                   href="@Url.Action("ByDate", new {
+                                       startDate = Model.StartDate,
+                                       endDate = Model.EndDate,
+                                       cameraId = Model.CameraId,
+                                       direction = Model.Direction,
+                                       page = Model.PageNumber + 1,
+                                       pageSize = Model.PageSize
+                                   })">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            Không tìm thấy dữ liệu trong khoảng thời gian này.
+        </div>
+    }
+</div>

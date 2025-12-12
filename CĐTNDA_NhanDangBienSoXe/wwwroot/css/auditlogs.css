@@ -1,0 +1,58 @@
+/* Audit Logs Page Styles */
+
+.filter-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.log-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+}
+
+.badge-action {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+}
+
+/* Action badges colors */
+.action-login {
+    background-color: #28a745;
+}
+
+.action-logout {
+    background-color: #6c757d;
+}
+
+.action-create {
+    background-color: #007bff;
+}
+
+.action-update {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.action-delete {
+    background-color: #dc3545;
+}
+
+.action-export {
+    background-color: #17a2b8;
+}
+
+.action-recognition {
+    background-color: #6f42c1;
+}
+
+.action-camera {
+    background-color: #fd7e14;
+}
+
+.action-default {
+    background-color: #6c757d;
+}

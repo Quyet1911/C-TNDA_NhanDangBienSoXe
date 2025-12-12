@@ -1,0 +1,130 @@
+@{
+    ViewData["Title"] = "Truy cập bị từ chối";
+}
+
+<style>
+    .access-denied-container {
+        text-align: center;
+        padding: 60px 20px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .icon-container {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 30px;
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 40px rgba(231, 76, 60, 0.3);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .icon-container i {
+        font-size: 60px;
+        color: white;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 10px 40px rgba(231, 76, 60, 0.3);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 15px 50px rgba(231, 76, 60, 0.5);
+        }
+    }
+
+    .error-code {
+        color: #e74c3c;
+        font-size: 4rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+
+    .access-denied-container h1 {
+        color: #333;
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        font-weight: 700;
+    }
+
+    .message {
+        color: #666;
+        font-size: 1rem;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+
+    .btn-group-custom {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-custom {
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        border: none;
+    }
+
+    .btn-primary-custom:hover {
+        background: linear-gradient(135deg, #2980b9, #21618c);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(52, 152, 219, 0.4);
+        text-decoration: none;
+    }
+
+    .btn-outline-custom {
+        background: transparent;
+        color: #333;
+        border: 2px solid #ddd;
+    }
+
+    .btn-outline-custom:hover {
+        background: #f8f9fa;
+        color: #333;
+        border-color: #ccc;
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+</style>
+
+<div class="access-denied-container">
+    
+    <div class="error-code">403</div>
+
+    <h1>Truy cập bị từ chối</h1>
+
+    <p class="message">
+        Bạn không có quyền truy cập vào trang này.<br>
+        Vui lòng liên hệ quản trị viên nếu bạn cho rằng đây là lỗi.
+    </p>
+
+    <div class="btn-group-custom">
+        <a href="/" class="btn-custom btn-primary-custom">
+            <i class="fas fa-home"></i> Trang chủ
+        </a>
+        <a href="javascript:history.back()" class="btn-custom btn-outline-custom">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>

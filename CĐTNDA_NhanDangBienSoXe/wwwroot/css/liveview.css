@@ -1,0 +1,463 @@
+.live-view-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.live-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.live-view-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.live-view-title i {
+    color: #28a745;
+    margin-right: 10px;
+}
+
+/* Camera Wrapper */
+.camera-wrapper {
+    position: relative;
+    background: #1a1a2e;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.camera-video-container {
+    position: relative;
+    width: 100%;
+    max-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+
+#cameraVideo {
+    width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+}
+
+#canvas {
+    display: none;
+}
+
+/* Camera Overlay */
+.camera-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.camera-overlay::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    height: 80%;
+    border: 3px solid rgba(40, 167, 69, 0.7);
+    border-radius: 10px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
+}
+
+.camera-overlay-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, calc(-50% - 80px));
+    color: #fff;
+    font-size: 14px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+/* Camera Status */
+.camera-status {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 15px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.9rem;
+    z-index: 10;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ffc107;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.status-dot.connected {
+    background: #28a745;
+}
+
+.status-dot.error {
+    background: #dc3545;
+    animation: none;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.camera-info {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 15px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.85rem;
+    z-index: 10;
+}
+
+/* Camera Controls */
+.camera-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    flex-wrap: wrap;
+}
+
+.control-btn {
+    padding: 12px 25px;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.capture-btn {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+    border: none;
+    min-width: 180px;
+    justify-content: center;
+}
+
+.capture-btn:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: scale(1.05);
+    box-shadow: 0 5px 20px rgba(40, 167, 69, 0.4);
+}
+
+.capture-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.switch-btn {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    border: none;
+}
+
+.switch-btn:hover {
+    background: linear-gradient(135deg, #138496, #117a8b);
+}
+
+/* No Camera */
+.no-camera {
+    text-align: center;
+    padding: 60px 20px;
+    color: #fff;
+}
+
+.no-camera i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 15px;
+    color: white;
+    z-index: 100;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+/* Result Panel */
+.result-panel {
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.result-header {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.result-body {
+    padding: 20px;
+}
+
+.plate-result {
+    text-align: center;
+    padding: 20px;
+}
+
+.plate-number {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #333;
+    background: #f8f9fa;
+    padding: 15px 40px;
+    border-radius: 10px;
+    border: 3px solid #dee2e6;
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 3px;
+}
+
+.plate-meta {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.plate-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+}
+
+.plate-meta-item i {
+    color: #28a745;
+}
+
+/* History Section */
+.history-section {
+    margin-top: 30px;
+}
+
+.history-section h5 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.history-table {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.history-table th {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+}
+
+.history-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.history-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Auto Scan Toggle */
+.auto-scan-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 25px;
+}
+
+.auto-scan-toggle label {
+    color: white;
+    font-size: 0.9rem;
+    margin: 0;
+    cursor: pointer;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 26px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #555;
+    transition: 0.3s;
+    border-radius: 26px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #28a745;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+/* Scanning Animation */
+.scanning-indicator {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    color: #28a745;
+    font-weight: 600;
+}
+
+.scanning-indicator.active {
+    display: flex;
+}
+
+.scanning-dot {
+    width: 8px;
+    height: 8px;
+    background: #28a745;
+    border-radius: 50%;
+    animation: scanning-pulse 1s ease-in-out infinite;
+}
+
+@keyframes scanning-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+/* Scan Frame Animation */
+.camera-overlay.scanning::before {
+    animation: scan-frame 1.5s ease-in-out infinite;
+}
+
+@keyframes scan-frame {
+    0%, 100% { border-color: rgba(40, 167, 69, 0.7); }
+    50% { border-color: rgba(40, 167, 69, 1); box-shadow: 0 0 20px rgba(40, 167, 69, 0.5), 0 0 0 9999px rgba(0, 0, 0, 0.3); }
+}
+
+/* Cooldown indicator */
+.cooldown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(40, 167, 69, 0.3);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.cooldown-overlay.show {
+    display: flex;
+}
+
+.cooldown-text {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .plate-number {
+        font-size: 2rem;
+        padding: 10px 20px;
+    }
+
+    .plate-meta {
+        gap: 15px;
+    }
+
+    .camera-controls {
+        padding: 15px;
+    }
+
+    .control-btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+}

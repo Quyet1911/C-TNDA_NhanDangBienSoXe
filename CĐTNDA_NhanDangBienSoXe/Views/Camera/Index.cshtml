@@ -1,0 +1,317 @@
+@model IEnumerable<Camera>
+@{
+    ViewData["Title"] = "Quản lý Camera";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/camera.css" />
+}
+
+<div class="camera-container">
+    <!-- Header -->
+    <div class="camera-header">
+        <div>
+            <h1 class="page-title">
+                <i class="fas fa-video"></i> Quản lý Camera
+            </h1>
+            <p class="text-muted">Quản lý danh sách camera và quét QR để kết nối</p>
+        </div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+            <i class="fas fa-plus"></i> Thêm Camera
+        </button>
+    </div>
+
+    <!-- Thông báo -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Camera Grid -->
+    @if (Model.Any())
+    {
+        <div class="camera-grid">
+            @foreach (var camera in Model)
+            {
+                <div class="camera-card">
+                    <div class="camera-card-header">
+                        <h3 class="camera-card-title">
+                            <i class="fas fa-video"></i>
+                            @camera.Name
+                        </h3>
+                        <span class="camera-status-badge @(camera.IsActive ? "active" : "inactive")">
+                            <i class="fas fa-circle"></i>
+                            @(camera.IsActive ? "Hoạt động" : "Tắt")
+                        </span>
+                    </div>
+
+                    <div class="camera-card-body">
+                        @if (!string.IsNullOrEmpty(camera.LocationNote))
+                        {
+                            <div class="camera-info-row">
+                                <div class="camera-info-icon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="camera-info-content">
+                                    <div class="camera-info-label">Vị trí</div>
+                                    <div class="camera-info-value">@camera.LocationNote</div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(camera.IpAddress))
+                        {
+                            <div class="camera-info-row">
+                                <div class="camera-info-icon">
+                                    <i class="fas fa-network-wired"></i>
+                                </div>
+                                <div class="camera-info-content">
+                                    <div class="camera-info-label">IP Address</div>
+                                    <div class="camera-info-value">@camera.IpAddress</div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="camera-info-row">
+                            <div class="camera-info-icon">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="camera-info-content">
+                                <div class="camera-info-label">Ngày tạo</div>
+                                <div class="camera-info-value">@camera.CreatedAt.ToString("dd/MM/yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="camera-qr-section">
+                        <div class="qr-instruction">
+                            <i class="fas fa-qrcode"></i> Quét QR để kết nối camera
+                        </div>
+                        <div class="qr-code-container">
+                            <img src="/Camera/GenerateQR/@camera.CameraId" alt="QR Code" />
+                        </div>
+                    </div>
+
+                    <div class="camera-actions">
+                        <a href="/Camera/LiveView/@camera.CameraId" class="btn btn-sm btn-success" title="Xem Camera">
+                            <i class="fas fa-play"></i> Xem
+                        </a>
+                        <button class="btn btn-sm btn-outline-primary" onclick="toggleStatus(@camera.CameraId)" title="Bật/Tắt">
+                            <i class="fas fa-power-off"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="editCamera(@camera.CameraId)" title="Sửa">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCamera(@camera.CameraId, '@camera.Name')" title="Xóa">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-video-slash"></i>
+            <h3>Chưa có camera nào</h3>
+            <p>Hãy thêm camera đầu tiên để bắt đầu</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+                <i class="fas fa-plus"></i> Thêm Camera
+            </button>
+        </div>
+    }
+</div>
+
+<!-- Create Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus"></i> Thêm Camera Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i> Tên camera
+                        </label>
+                        <input type="text" class="form-control" name="Name" required maxlength="150" placeholder="VD: Camera cổng chính" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-map-marker-alt"></i> Vị trí
+                        </label>
+                        <input type="text" class="form-control" name="LocationNote" maxlength="255" placeholder="VD: Cổng vào tầng 1" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-network-wired"></i> IP Address
+                        </label>
+                        <input type="text" class="form-control" name="IpAddress" maxlength="64" placeholder="VD: 192.168.1.100" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-link"></i> Stream URL
+                        </label>
+                        <input type="text" class="form-control" name="StreamUrl" maxlength="500" placeholder="VD: rtsp://192.168.1.100:554/stream" />
+                    </div>
+
+                    <div class="form-check">
+                        <input type="hidden" name="IsActive" value="false" />
+                        <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="isActiveCreate" checked />
+                        <label class="form-check-label" for="isActiveCreate">
+                            Kích hoạt ngay
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit"></i> Chỉnh sửa Camera</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editForm" method="post">
+                <input type="hidden" name="CameraId" id="editCameraId" />
+                <input type="hidden" name="CreatedAt" id="editCreatedAt" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i> Tên camera
+                        </label>
+                        <input type="text" class="form-control" name="Name" id="editName" required maxlength="150" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-map-marker-alt"></i> Vị trí
+                        </label>
+                        <input type="text" class="form-control" name="LocationNote" id="editLocation" maxlength="255" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-network-wired"></i> IP Address
+                        </label>
+                        <input type="text" class="form-control" name="IpAddress" id="editIp" maxlength="64" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-link"></i> Stream URL
+                        </label>
+                        <input type="text" class="form-control" name="StreamUrl" id="editStream" maxlength="500" />
+                    </div>
+
+                    <div class="form-check">
+                        <input type="hidden" name="IsActive" value="false" />
+                        <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="editIsActive" />
+                        <label class="form-check-label" for="editIsActive">
+                            Kích hoạt
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Cập nhật
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        // Toggle camera status
+        function toggleStatus(id) {
+            if (confirm('Bạn có chắc muốn thay đổi trạng thái camera này?')) {
+                fetch(`/Camera/ToggleStatus/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Có lỗi xảy ra!');
+                    console.error(error);
+                });
+            }
+        }
+
+        // Edit camera
+        function editCamera(id) {
+            fetch(`/Camera/Edit/${id}`)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Extract form data
+                    const form = doc.querySelector('form');
+                    const formData = new FormData(form);
+
+                    // Populate edit modal
+                    document.getElementById('editCameraId').value = formData.get('CameraId') || id;
+                    document.getElementById('editName').value = formData.get('Name') || '';
+                    document.getElementById('editLocation').value = formData.get('LocationNote') || '';
+                    document.getElementById('editIp').value = formData.get('IpAddress') || '';
+                    document.getElementById('editStream').value = formData.get('StreamUrl') || '';
+                    document.getElementById('editCreatedAt').value = formData.get('CreatedAt') || '';
+                    document.getElementById('editIsActive').checked = formData.get('IsActive') === 'true';
+
+                    // Update form action
+                    document.getElementById('editForm').action = `/Camera/Edit/${id}`;
+
+                    // Show modal
+                    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                    editModal.show();
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Không thể tải thông tin camera!');
+                });
+        }
+
+        // Delete camera
+        function deleteCamera(id, name) {
+            if (confirm(`Bạn có chắc muốn xóa camera "${name}"?\nHành động này không thể hoàn tác.`)) {
+                const form = document.getElementById('deleteForm');
+                form.action = `/Camera/Delete/${id}`;
+                form.submit();
+            }
+        }
+    </script>
+}

@@ -1,0 +1,158 @@
+@model IEnumerable<Role>
+@{
+    ViewData["Title"] = "Quản lý vai trò";
+}
+
+<!-- Thông báo -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Header -->
+<div class="admin-table-card mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3 class="table-title mb-0">
+            <i class="fas fa-user-shield"></i>
+            Quản lý vai trò và phân quyền
+        </h3>
+        <div>
+            <a href="/Admin/Permissions" class="btn btn-info me-2">
+                <i class="fas fa-key"></i> Quản lý quyền
+            </a>
+            <a href="/Admin/Roles/Create" class="btn btn-success">
+                <i class="fas fa-plus"></i> Thêm vai trò
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Roles Table -->
+<div class="admin-table-card">
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px">ID</th>
+                        <th>Tên vai trò</th>
+                        <th>Mô tả</th>
+                        <th>Số người dùng</th>
+                        <th>Quyền được gán</th>
+                        <th style="width: 180px">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var role in Model)
+                    {
+                        <tr>
+                            <td><strong>#@role.RoleId</strong></td>
+                            <td>
+                                <strong class="text-primary">@role.Name</strong>
+                            </td>
+                            <td>@(role.Description ?? "N/A")</td>
+                            <td>
+                                <span class="badge bg-info">
+                                    <i class="fas fa-users"></i> @role.UserRoles.Count
+                                </span>
+                            </td>
+                            <td>
+                                @if (role.RolePermissions != null && role.RolePermissions.Any())
+                                {
+                                    var permissionGroups = role.RolePermissions
+                                        .GroupBy(rp => rp.Permission.Category ?? "Khác")
+                                        .OrderBy(g => g.Key);
+
+                                    foreach (var group in permissionGroups)
+                                    {
+                                        <div class="mb-1">
+                                            <small class="text-muted fw-bold">@group.Key:</small>
+                                            @foreach (var rp in group)
+                                            {
+                                                <span class="badge bg-secondary me-1" title="@rp.Permission.Description">
+                                                    @rp.Permission.Name
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted"><i>Chưa có quyền</i></span>
+                                }
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/Admin/Roles/Edit/@role.RoleId" class="btn btn-sm btn-warning" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="/Admin/Roles/Details/@role.RoleId" class="btn btn-sm btn-info" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (!role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteRole(@role.RoleId, '@role.Name', @role.UserRoles.Count)" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-user-shield fa-3x mb-3"></i>
+            <p>Chưa có vai trò nào</p>
+            <a href="/Admin/Roles/Create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Thêm vai trò đầu tiên
+            </a>
+        </div>
+    }
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        function deleteRole(id, name, userCount) {
+            if (userCount > 0) {
+                alert(`Không thể xóa vai trò "${name}" vì còn ${userCount} người dùng đang sử dụng!`);
+                return;
+            }
+
+            if (confirm(`Bạn có chắc muốn xóa vai trò "${name}"?\nHành động này không thể hoàn tác.`)) {
+                const form = document.getElementById('deleteForm');
+                form.action = `/Admin/Roles/Delete/${id}`;
+                form.submit();
+            }
+        }
+
+        // Auto-dismiss alerts
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+}

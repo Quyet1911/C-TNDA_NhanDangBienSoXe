@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <a href="/Admin/Dashboard" class="sidebar-logo">
+                    <i class="fas fa-shield-halved"></i>
+                    <div class="sidebar-logo-text">
+                        <h2>Admin Panel</h2>
+                        <p>Quản trị hệ thống</p>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <!-- Dashboard -->
+                    <li class="nav-section">
+                        <div class="nav-section-title">Tổng quan</div>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li class="nav-item">
+                                <a href="/Admin/Dashboard" class="nav-link">
+                                    <i class="fas fa-home"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Quản lý -->
+                    <li class="nav-section">
+                        <div class="nav-section-title">Quản lý</div>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li class="nav-item">
+                                <a href="/Admin/Users" class="nav-link">
+                                    <i class="fas fa-users"></i>
+                                    <span>Người dùng</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Roles" class="nav-link">
+                                    <i class="fas fa-user-tag"></i>
+                                    <span>Phân quyền</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Camera" class="nav-link">
+                                    <i class="fas fa-video"></i>
+                                    <span>Camera</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Báo cáo -->
+                    <li class="nav-section">
+                        <div class="nav-section-title">Báo cáo</div>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li class="nav-item">
+                                <a href="/Admin/Reports/Overview" class="nav-link">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <span>Báo cáo tổng hợp</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Reports/ByDate" class="nav-link">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Báo cáo theo ngày</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/Exports" class="nav-link">
+                                    <i class="fas fa-file-export"></i>
+                                    <span>Xuất dữ liệu</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Admin/AuditLogs" class="nav-link">
+                                    <i class="fas fa-history"></i>
+                                    <span>Nhật ký hoạt động</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Hệ thống -->
+                    <li class="nav-section">
+                        <div class="nav-section-title">Hệ thống</div>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li class="nav-item">
+                                <a href="/" class="nav-link">
+                                    <i class="fas fa-arrow-left"></i>
+                                    <span>Về trang chính</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Header -->
+            <header class="admin-header">
+                <div class="admin-header-title">
+                    <h1>@ViewData["Title"]</h1>
+                </div>
+
+                <div class="admin-user-menu">
+                    <div class="user-info">
+                        <p class="user-name">@User.Identity?.Name</p>
+                        <p class="user-role">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</p>
+                    </div>
+                   @*  <div class="user-avatar">
+                        @(User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "A")
+                    </div> *@
+                    <div class="dropdown">
+                        <button class="btn btn-link text-dark" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/"><i class="fas fa-home"></i> Trang chủ</a></li>
+                            <li>
+                                <form method="post" action="/Account/Logout" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="admin-content">
+                @RenderBody()
+            </div>
+        </main>
+
+        <!-- Mobile Sidebar Toggle -->
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar toggle for mobile
+        const sidebar = document.getElementById('adminSidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('show');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 992) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
+
+        // Active menu item
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            }
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

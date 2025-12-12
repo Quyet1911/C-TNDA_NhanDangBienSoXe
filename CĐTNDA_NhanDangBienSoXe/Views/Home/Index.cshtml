@@ -1,0 +1,287 @@
+@model CĐTNDA_NhanDangBienSoXe.Models.HomeDashboardViewModel
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css" />
+}
+
+<div class="home-dashboard">
+    <!-- Header Welcome -->
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1 class="welcome-title">
+                <i class="fas fa-home"></i> Chào mừng trở lại
+            </h1>
+            <p class="welcome-subtitle">@Model.FullName <span class="badge bg-primary">@Model.RoleName</span></p>
+        </div>
+        <div class="date-section">
+            <i class="fas fa-calendar-alt"></i>
+            <span id="currentDate"></span>
+        </div>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="stats-row">
+        <!-- Card: Tổng số lượt quét hôm nay -->
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-number">@Model.TodayTotalRecognitions</h3>
+                <p class="stat-label">Lượt quét hôm nay</p>
+            </div>
+        </div>
+
+        <!-- Card: Xe unique hôm nay -->
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="fas fa-car"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-number">@Model.TodayUniqueVehicles</h3>
+                <p class="stat-label">Xe unique hôm nay</p>
+            </div>
+        </div>
+
+        <!-- Card: Xe vào -->
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-number">@Model.TodayInCount</h3>
+                <p class="stat-label">Xe vào hôm nay</p>
+            </div>
+        </div>
+
+        <!-- Card: Xe ra -->
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">
+                <i class="fas fa-arrow-left"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-number">@Model.TodayOutCount</h3>
+                <p class="stat-label">Xe ra hôm nay</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="content-row">
+        <!-- Camera Status Section -->
+        <div class="content-card camera-status-card">
+            <div class="card-header">
+                <h3><i class="fas fa-video"></i> Trạng thái Camera</h3>
+                <span class="badge bg-secondary">@Model.TotalCameras camera</span>
+            </div>
+            <div class="card-body">
+                @if (Model.TotalCameras == 0)
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-video-slash"></i>
+                        <p>Chưa có camera nào được cấu hình</p>
+                        <a href="/Camera" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Thêm camera
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="camera-summary">
+                        <div class="summary-item summary-active">
+                            <i class="fas fa-check-circle"></i>
+                            <span>@Model.ActiveCameras Hoạt động</span>
+                        </div>
+                        <div class="summary-item summary-inactive">
+                            <i class="fas fa-times-circle"></i>
+                            <span>@Model.InactiveCameras Không hoạt động</span>
+                        </div>
+                    </div>
+
+                    <div class="camera-list">
+                        @foreach (var camera in Model.CameraStatuses)
+                        {
+                            <div class="camera-item">
+                                <div class="camera-info">
+                                    <i class="fas fa-video"></i>
+                                    <div>
+                                        <h4>@camera.Name</h4>
+                                        @if (!string.IsNullOrEmpty(camera.LocationNote))
+                                        {
+                                            <p class="text-muted">@camera.LocationNote</p>
+                                        }
+                                    </div>
+                                </div>
+                                <span class="badge @camera.StatusClass">@camera.StatusText</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Recent Recognitions Section -->
+        <div class="content-card recent-recognitions-card">
+            <div class="card-header">
+                <h3><i class="fas fa-history"></i> Nhận dạng gần đây</h3>
+                <a href="/Recognition/History" class="view-all-link">
+                    Xem tất cả <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentRecognitions == null || !Model.RecentRecognitions.Any())
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>Chưa có kết quả nhận dạng nào</p>
+                        <a href="/Recognition" class="btn btn-success btn-sm">
+                            <i class="fas fa-qrcode"></i> Bắt đầu quét
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="recognition-list">
+                        @foreach (var item in Model.RecentRecognitions)
+                        {
+                            <div class="recognition-item">
+                                <div class="recognition-image">
+                                    @if (!string.IsNullOrEmpty(item.ImagePath))
+                                    {
+                                        <img src="@item.ImagePath" alt="Plate" />
+                                    }
+                                    else
+                                    {
+                                        <div class="no-image">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="recognition-info">
+                                    <div class="plate-number">
+                                        <strong>@(item.PlateNorm ?? "N/A")</strong>
+                                        @if (!string.IsNullOrEmpty(item.Direction))
+                                        {
+                                            <span class="direction-badge">
+                                                <i class="fas @item.DirectionIcon"></i> @item.DirectionText
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="recognition-meta">
+                                        <span>
+                                            <i class="fas fa-video"></i> @(item.CameraName ?? "Unknown")
+                                        </span>
+                                        @if (item.Confidence.HasValue)
+                                        {
+                                            <span>
+                                                <i class="fas fa-percentage"></i> @item.Confidence.Value.ToString("F1")%
+                                            </span>
+                                        }
+                                        <span>
+                                            <i class="fas fa-clock"></i> @item.TimeAgo
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly/Monthly Stats Row -->
+    <div class="stats-row secondary-stats">
+        <div class="stat-card-small">
+            <div class="stat-content">
+                <i class="fas fa-calendar-week text-primary"></i>
+                <div>
+                    <h4>@Model.WeekTotalRecognitions</h4>
+                    <p>Quét tuần này</p>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-small">
+            <div class="stat-content">
+                <i class="fas fa-car text-success"></i>
+                <div>
+                    <h4>@Model.WeekUniqueVehicles</h4>
+                    <p>Xe duy nhất tuần này</p>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-small">
+            <div class="stat-content">
+                <i class="fas fa-calendar-alt text-info"></i>
+                <div>
+                    <h4>@Model.MonthTotalRecognitions</h4>
+                    <p>Quét tháng này</p>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card-small">
+            <div class="stat-content">
+                <i class="fas fa-car-side text-warning"></i>
+                <div>
+                    <h4>@Model.MonthUniqueVehicles</h4>
+                    <p>Xe duy nhất tháng này</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3><i class="fas fa-bolt"></i> Thao tác nhanh</h3>
+        <div class="action-buttons">
+            <a href="/Recognition" class="action-btn action-btn-primary">
+                <i class="fas fa-qrcode"></i>
+                <span>Quét biển số</span>
+            </a>
+            <a href="/Camera" class="action-btn action-btn-info">
+                <i class="fas fa-video"></i>
+                <span>Xem Camera</span>
+            </a>
+            <a href="/Recognition/History" class="action-btn action-btn-success">
+                <i class="fas fa-history"></i>
+                <span>Lịch sử</span>
+            </a>
+            <a href="/Stats" class="action-btn action-btn-warning">
+                <i class="fas fa-chart-bar"></i>
+                <span>Thống kê</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Hiển thị ngày giờ hiện tại
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+            const dateStr = now.toLocaleDateString('vi-VN', options);
+            const timeStr = now.toLocaleTimeString('vi-VN');
+            document.getElementById('currentDate').textContent = `${dateStr}, ${timeStr}`;
+        }
+
+        // Cập nhật mỗi giây
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // Animation khi load
+        window.addEventListener('load', function() {
+            document.querySelectorAll('.stat-card, .content-card').forEach((el, index) => {
+                el.style.animation = `fadeInUp 0.6s ease ${index * 0.1}s both`;
+            });
+        });
+    </script>
+}

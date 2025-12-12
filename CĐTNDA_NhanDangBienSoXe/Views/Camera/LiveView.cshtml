@@ -1,0 +1,435 @@
+@model Camera
+@{
+    ViewData["Title"] = $"Xem Camera: {Model.Name}";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/liveview.css" />
+}
+
+<div class="live-view-container">
+    <!-- Header -->
+    <div class="live-view-header">
+        <h1 class="live-view-title">
+            <i class="fas fa-video"></i> @Model.Name
+        </h1>
+        <div>
+            <a href="/Camera" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </div>
+
+    <!-- Camera View -->
+    <div class="camera-wrapper">
+        <div class="camera-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Đang kết nối...</span>
+        </div>
+        <div class="camera-info">
+            <i class="fas fa-map-marker-alt"></i> @(Model.LocationNote ?? "N/A")
+        </div>
+
+        <div class="camera-video-container">
+            <video id="cameraVideo" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+
+            <div class="camera-overlay" id="cameraOverlay">
+                <div class="camera-overlay-text">
+                    <i class="fas fa-car"></i> Đặt biển số xe vào khung
+                </div>
+            </div>
+
+            <div class="no-camera" id="noCameraDiv" style="display: none;">
+                <i class="fas fa-video-slash"></i>
+                <h4>Không tìm thấy camera</h4>
+                <p>Vui lòng cấp quyền truy cập camera hoặc kiểm tra kết nối</p>
+                <button class="btn btn-primary mt-3" onclick="startCamera()">
+                    <i class="fas fa-redo"></i> Thử lại
+                </button>
+            </div>
+
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner-border text-light" style="width: 3rem; height: 3rem;"></div>
+                <p>Đang nhận dạng biển số...</p>
+            </div>
+
+            <div class="cooldown-overlay" id="cooldownOverlay">
+                <div class="cooldown-text">
+                    <i class="fas fa-check-circle"></i> Đã nhận dạng! Chờ <span id="cooldownTimer">3</span>s...
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="camera-controls">
+            <div class="auto-scan-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoScanToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <label for="autoScanToggle">Tự động quét</label>
+                <div class="scanning-indicator" id="scanningIndicator">
+                    <span class="scanning-dot"></span>
+                    <span>Đang quét...</span>
+                </div>
+            </div>
+            <button class="control-btn switch-btn" id="switchCameraBtn" title="Chuyển camera">
+                <i class="fas fa-sync-alt"></i> Chuyển
+            </button>
+            <button class="control-btn capture-btn" id="captureBtn">
+                <i class="fas fa-camera"></i> Chụp & Nhận dạng
+            </button>
+        </div>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="result-panel" id="resultPanel" style="display: none;">
+        <div class="result-header">
+            <i class="fas fa-check-circle"></i>
+            <span>Nhận dạng thành công!</span>
+        </div>
+        <div class="result-body">
+            <div class="plate-result">
+                <div class="plate-number" id="plateNumber">--</div>
+                <div class="plate-meta">
+                    <div class="plate-meta-item">
+                        <i class="fas fa-percentage"></i>
+                        <span>Độ chính xác: <strong id="plateConfidence">--%</strong></span>
+                    </div>
+                    <div class="plate-meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Thời gian: <strong id="plateTime">--:--:--</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent History -->
+    <div class="history-section">
+        <h5><i class="fas fa-history"></i> Lịch sử quét gần đây</h5>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Biển số</th>
+                    <th>Thời gian</th>
+                    <th>Độ chính xác</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody">
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">
+                        <i class="fas fa-inbox"></i> Chưa có lịch sử quét
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Elements
+        const video = document.getElementById('cameraVideo');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const switchCameraBtn = document.getElementById('switchCameraBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const cooldownOverlay = document.getElementById('cooldownOverlay');
+        const resultPanel = document.getElementById('resultPanel');
+        const noCameraDiv = document.getElementById('noCameraDiv');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const autoScanToggle = document.getElementById('autoScanToggle');
+        const scanningIndicator = document.getElementById('scanningIndicator');
+        const cameraOverlay = document.getElementById('cameraOverlay');
+        const cameraId = @Model.CameraId;
+
+        // State
+        let currentStream = null;
+        let useFrontCamera = false;
+        let scanHistory = [];
+        let isAutoScanning = false;
+        let autoScanInterval = null;
+        let isProcessing = false;
+        let lastDetectedPlate = '';
+
+        // Config
+        const AUTO_SCAN_INTERVAL = 1500; // Quét mỗi 1.5 giây
+        const COOLDOWN_TIME = 3000; // Chờ 3 giây sau khi nhận dạng thành công
+        const SAME_PLATE_COOLDOWN = 5000; // Không quét lại biển số giống trong 5 giây
+
+        // Khởi động camera
+        async function startCamera() {
+            try {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+
+                noCameraDiv.style.display = 'none';
+                video.style.display = 'block';
+
+                const constraints = {
+                    video: {
+                        facingMode: useFrontCamera ? 'user' : 'environment',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                };
+
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = currentStream;
+
+                statusDot.classList.add('connected');
+                statusText.textContent = 'Đang hoạt động';
+
+                video.addEventListener('loadedmetadata', () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                });
+
+            } catch (error) {
+                console.error('Camera error:', error);
+                statusDot.classList.add('error');
+                statusText.textContent = 'Không kết nối được';
+                video.style.display = 'none';
+                noCameraDiv.style.display = 'block';
+            }
+        }
+
+        // Chuyển đổi camera
+        switchCameraBtn.addEventListener('click', () => {
+            useFrontCamera = !useFrontCamera;
+            startCamera();
+        });
+
+        // Toggle Auto Scan
+        autoScanToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                startAutoScan();
+            } else {
+                stopAutoScan();
+            }
+        });
+
+        // Bắt đầu auto scan
+        function startAutoScan() {
+            if (isAutoScanning) return;
+
+            isAutoScanning = true;
+            scanningIndicator.classList.add('active');
+            cameraOverlay.classList.add('scanning');
+            captureBtn.disabled = true;
+
+            autoScanInterval = setInterval(autoCapture, AUTO_SCAN_INTERVAL);
+            console.log('Auto scan started');
+        }
+
+        // Dừng auto scan
+        function stopAutoScan() {
+            isAutoScanning = false;
+            scanningIndicator.classList.remove('active');
+            cameraOverlay.classList.remove('scanning');
+            captureBtn.disabled = false;
+
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+                autoScanInterval = null;
+            }
+            console.log('Auto scan stopped');
+        }
+
+        // Auto capture
+        async function autoCapture() {
+            if (!currentStream || isProcessing) return;
+
+            isProcessing = true;
+
+            try {
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                if (!blob) {
+                    isProcessing = false;
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('ImageFile', blob, 'capture.jpg');
+                formData.append('CameraId', cameraId);
+                formData.append('Direction', 'In');
+
+                const response = await fetch('/Recognition/Recognize', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.plateNorm) {
+                    // Kiểm tra xem có phải biển số mới không
+                    if (result.plateNorm !== lastDetectedPlate) {
+                        lastDetectedPlate = result.plateNorm;
+
+                        displayResult(result);
+                        addToHistory(result);
+                        playSuccessSound();
+
+                        // Hiển thị cooldown
+                        showCooldown();
+                    }
+                }
+            } catch (error) {
+                console.error('Auto capture error:', error);
+            } finally {
+                isProcessing = false;
+            }
+        }
+
+        // Hiển thị cooldown
+        function showCooldown() {
+            // Tạm dừng auto scan
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+            }
+
+            cooldownOverlay.classList.add('show');
+            let countdown = 3;
+            document.getElementById('cooldownTimer').textContent = countdown;
+
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                document.getElementById('cooldownTimer').textContent = countdown;
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    cooldownOverlay.classList.remove('show');
+
+                    // Tiếp tục auto scan nếu đang bật
+                    if (isAutoScanning) {
+                        autoScanInterval = setInterval(autoCapture, AUTO_SCAN_INTERVAL);
+                    }
+
+                    // Reset last plate sau SAME_PLATE_COOLDOWN
+                    setTimeout(() => {
+                        lastDetectedPlate = '';
+                    }, SAME_PLATE_COOLDOWN);
+                }
+            }, 1000);
+        }
+
+        // Chụp thủ công
+        captureBtn.addEventListener('click', async () => {
+            if (!currentStream || isProcessing) {
+                alert('Camera chưa sẵn sàng!');
+                return;
+            }
+
+            isProcessing = true;
+            loadingOverlay.classList.add('show');
+            captureBtn.disabled = true;
+
+            try {
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                if (!blob) {
+                    alert('Không thể chụp ảnh!');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('ImageFile', blob, 'capture.jpg');
+                formData.append('CameraId', cameraId);
+                formData.append('Direction', 'In');
+
+                const response = await fetch('/Recognition/Recognize', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResult(result);
+                    addToHistory(result);
+                    playSuccessSound();
+                } else {
+                    alert(result.message || 'Không nhận dạng được biển số');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Có lỗi xảy ra khi gửi ảnh!');
+            } finally {
+                loadingOverlay.classList.remove('show');
+                captureBtn.disabled = isAutoScanning;
+                isProcessing = false;
+            }
+        });
+
+        // Hiển thị kết quả
+        function displayResult(result) {
+            document.getElementById('plateNumber').textContent = result.plateNorm || result.plateTextRaw || 'N/A';
+            document.getElementById('plateConfidence').textContent = result.confidence ? result.confidence.toFixed(1) + '%' : 'N/A';
+
+            const time = result.detectedAt ? new Date(result.detectedAt).toLocaleTimeString('vi-VN') : new Date().toLocaleTimeString('vi-VN');
+            document.getElementById('plateTime').textContent = time;
+
+            resultPanel.style.display = 'block';
+        }
+
+        // Thêm vào lịch sử
+        function addToHistory(result) {
+            scanHistory.unshift({
+                plate: result.plateNorm || result.plateTextRaw || 'N/A',
+                time: new Date().toLocaleTimeString('vi-VN'),
+                confidence: result.confidence ? result.confidence.toFixed(1) + '%' : 'N/A'
+            });
+
+            if (scanHistory.length > 10) scanHistory.pop();
+            updateHistoryTable();
+        }
+
+        // Cập nhật bảng lịch sử
+        function updateHistoryTable() {
+            const tbody = document.getElementById('historyBody');
+
+            if (scanHistory.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-inbox"></i> Chưa có lịch sử quét</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = scanHistory.map((item, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${item.plate}</strong></td>
+                    <td>${item.time}</td>
+                    <td><span class="badge bg-success">${item.confidence}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Phát âm thanh
+        function playSuccessSound() {
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PTqzn77BZFgpDmt/yuWseBDSJzvPWgyoFKHnF8NqTOwoTYrTp669WFApEm97xtWwhBS+Dz/PYhSwGJ27B7+OYRg0OT6vm77JaFQpBmt/yuWweBDOJz/PXhCkFKHnF8NuSOwkTYrPp66xWEwpDm97xs2whBCyDzvLYhiwHJ3DB7+OYRg0OT6vm77JaFQpBmt/yuWweBDOJz/PXhCkFKHnF8NuSOwkTYrPp66xWEwpDm97xs2whBCyDzvLYhiwHJ3DB7+OYRg==');
+                audio.play().catch(() => {});
+            } catch (e) {}
+        }
+
+        // Khởi động
+        window.addEventListener('load', startCamera);
+
+        // Dọn dẹp
+        window.addEventListener('beforeunload', () => {
+            stopAutoScan();
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+}

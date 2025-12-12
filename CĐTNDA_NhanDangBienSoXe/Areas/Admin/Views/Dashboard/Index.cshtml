@@ -1,0 +1,210 @@
+﻿@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Dashboard Cards -->
+<div class="dashboard-cards">
+    <!-- Total Users -->
+    <div class="dashboard-card primary">
+        <div class="card-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="card-label">Tổng người dùng</div>
+        <div class="card-value">@Model.TotalUsers</div>
+        <div class="card-footer">
+            <i class="fas fa-check-circle"></i>
+            <span>@Model.ActiveUsers hoạt động</span>
+        </div>
+    </div>
+
+    <!-- Total Cameras -->
+    <div class="dashboard-card success">
+        <div class="card-icon">
+            <i class="fas fa-video"></i>
+        </div>
+        <div class="card-label">Tổng camera</div>
+        <div class="card-value">@Model.TotalCameras</div>
+        <div class="card-footer">
+            <i class="fas fa-check-circle"></i>
+            <span>@Model.ActiveCameras hoạt động</span>
+        </div>
+    </div>
+
+    <!-- Today Recognitions -->
+    <div class="dashboard-card warning">
+        <div class="card-icon">
+            <i class="fas fa-car"></i>
+        </div>
+        <div class="card-label">Nhận dạng hôm nay</div>
+        <div class="card-value">@Model.TodayRecognitions</div>
+        <div class="card-footer">
+            <i class="fas fa-arrow-up"></i>
+            <span>@Model.WeekRecognitions trong tuần</span>
+        </div>
+    </div>
+
+    <!-- Total Recognitions -->
+    <div class="dashboard-card danger">
+        <div class="card-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="card-label">Tổng nhận dạng</div>
+        <div class="card-value">@Model.TotalRecognitions.ToString("N0")</div>
+        <div class="card-footer">
+            <i class="fas fa-database"></i>
+            <span>@Model.MonthRecognitions tháng này</span>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Section -->
+<div class="row">
+    <!-- Recent Users -->
+    <div class="col-lg-6 mb-4">
+        <div class="admin-table-card">
+            <div class="table-header">
+                <h3 class="table-title">
+                    <i class="fas fa-users"></i>
+                    Người dùng mới
+                </h3>
+                <a href="/Admin/Users" class="btn btn-sm btn-primary">
+                    Xem tất cả <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            @if (Model.RecentUsers.Any())
+            {
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Tên đăng nhập</th>
+                                <th>Họ tên</th>
+                                <th>Email</th>
+                                <th>Trạng thái</th>
+                                <th>Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model.RecentUsers)
+                            {
+                                <tr>
+                                    <td><strong>@user.UserName</strong></td>
+                                    <td>@(user.FullName ?? "N/A")</td>
+                                    <td>@(user.Email ?? "N/A")</td>
+                                    <td>
+                                        <span class="status-badge @(user.IsActive ? "active" : "inactive")">
+                                            <i class="fas fa-circle"></i>
+                                            @(user.IsActive ? "Hoạt động" : "Ngừng")
+                                        </span>
+                                    </td>
+                                    <td><small>@user.TimeAgo</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <p>Chưa có người dùng mới</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Recent Recognitions -->
+    <div class="col-lg-6 mb-4">
+        <div class="admin-table-card">
+            <div class="table-header">
+                <h3 class="table-title">
+                    <i class="fas fa-car"></i>
+                    Nhận dạng gần đây
+                </h3>
+                <a href="/Recognition/History" class="btn btn-sm btn-primary">
+                    Xem tất cả <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            @if (Model.RecentRecognitions.Any())
+            {
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Biển số</th>
+                                <th>Camera</th>
+                                <th>Hướng</th>
+                                <th>Độ tin cậy</th>
+                                <th>Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.RecentRecognitions)
+                            {
+                                <tr>
+                                    <td><strong>@(item.PlateNorm ?? "N/A")</strong></td>
+                                    <td>@(item.CameraName ?? "Unknown")</td>
+                                    <td>
+                                        <span class="badge bg-@(item.Direction?.ToLower() == "in" ? "success" : "warning")">
+                                            @item.DirectionText
+                                        </span>
+                                    </td>
+                                    <td>@string.Format("{0:F1}", item.Confidence)%</td>
+                                    <td><small>@item.TimeAgo</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-car fa-3x mb-3"></i>
+                    <p>Chưa có dữ liệu nhận dạng</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="admin-table-card">
+    <div class="table-header">
+        <h3 class="table-title">
+            <i class="fas fa-bolt"></i>
+            Thao tác nhanh
+        </h3>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-3">
+            <a href="/Admin/Users/Create" class="btn btn-outline-primary w-100 py-3">
+                <i class="fas fa-user-plus fa-2x d-block mb-2"></i>
+                Thêm người dùng
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/Roles" class="btn btn-outline-success w-100 py-3">
+                <i class="fas fa-user-tag fa-2x d-block mb-2"></i>
+                Phân quyền
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/Reports/Overview" class="btn btn-outline-warning w-100 py-3">
+                <i class="fas fa-chart-pie fa-2x d-block mb-2"></i>
+                Báo cáo tổng hợp
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/AuditLogs" class="btn btn-outline-info w-100 py-3">
+                <i class="fas fa-history fa-2x d-block mb-2"></i>
+                Nhật ký hoạt động
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,523 @@
+﻿@model ReportOverviewViewModel
+@{
+    ViewData["Title"] = "Báo cáo tổng hợp";
+}
+
+<style>
+    .stat-card {
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+    }
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .stat-card p {
+        color: #666;
+        margin: 0;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 30px;
+    }
+    .filter-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    .loading-overlay.active {
+        display: flex;
+    }
+    .loading-spinner {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    .loading-spinner .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Đang tải...</span>
+        </div>
+        <p class="mt-3 mb-0">Đang làm mới dữ liệu...</p>
+    </div>
+</div>
+
+<div class="container-fluid" id="reportContent">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-bar"></i> Báo cáo tổng hợp</h2>
+        <a href="@Url.Action("ExportCsv", new { period = Model.Period, startDate = Model.StartDate, endDate = Model.EndDate })"
+           class="btn btn-success">
+            <i class="fas fa-file-excel"></i> Xuất CSV
+        </a>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form method="get" action="@Url.Action("Overview")" id="filterForm">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Khoảng thời gian</label>
+                    <select name="period" id="periodSelect" class="form-select">
+                        <option value="today" selected="@(Model.Period == "today")">Hôm nay</option>
+                        <option value="week" selected="@(Model.Period == "week")">Tuần này</option>
+                        <option value="month" selected="@(Model.Period == "month")">Tháng này</option>
+                        <option value="custom" selected="@(Model.Period == "custom")">Tùy chỉnh</option>
+                    </select>
+                </div>
+                <div class="col-md-3" id="startDateDiv" style="display: @(Model.Period == "custom" ? "block" : "none")">
+                    <label class="form-label">Từ ngày</label>
+                    <input type="date" name="startDate" class="form-control" value="@Model.StartDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3" id="endDateDiv" style="display: @(Model.Period == "custom" ? "block" : "none")">
+                    <label class="form-label">Đến ngày</label>
+                    <input type="date" name="endDate" class="form-control" value="@Model.EndDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100" id="refreshBtn">
+                        <i class="fas fa-search"></i> <span id="btnText">Xem báo cáo</span>
+                        <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Thời gian báo cáo -->
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle"></i>
+        Báo cáo từ <strong>@Model.StartDate?.ToString("dd/MM/yyyy HH:mm")</strong>
+        đến <strong>@Model.EndDate?.ToString("dd/MM/yyyy HH:mm")</strong>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card ">
+                <p><i class="fas fa-camera"></i> Tổng nhận dạng</p>
+                <h3>@Model.TotalRecognitions.ToString("N0")</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card ">
+                <p><i class="fas fa-car"></i> Xe duy nhất</p>
+                <h3>@Model.UniqueVehicles.ToString("N0")</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card ">
+                <p><i class="fas fa-arrow-right"></i> Vào / Ra</p>
+                <h3>@Model.InCount / @Model.OutCount</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card ">
+                <p><i class="fas fa-percentage"></i> Độ tin cậy TB</p>
+                <h3>@Model.AverageConfidence.ToString("F1")%</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card ">
+                <p><i class="fas fa-check-circle"></i> Tỷ lệ thành công</p>
+                <h3>@Model.SuccessRate%</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card ">
+                <p><i class="fas fa-clock"></i> Thời gian xử lý TB</p>
+                <h3>@Model.AverageProcessingTime.ToString("F0")ms</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mt-4">
+        <!-- Biểu đồ theo giờ -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Thống kê theo giờ</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="hourlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biểu đồ theo camera -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Thống kê theo camera</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="cameraChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ theo ngày (nếu có) -->
+    @if (Model.DailyStats.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-area"></i> Thống kê theo ngày</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="dailyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    
+
+    <!-- Thống kê theo vùng (nếu có) -->
+    @if (Model.RegionStats.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-map-marker-alt"></i> Thống kê theo vùng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Vùng</th>
+                                        <th>Số lượng</th>
+                                        <th>Tỷ lệ</th>
+                                        <th>Biểu đồ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var region in Model.RegionStats)
+                                    {
+                                        <tr>
+                                            <td><strong>@region.Region</strong></td>
+                                            <td>@region.Count</td>
+                                            <td>@region.Percentage.ToString("F1")%</td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar" role="progressbar"
+                                                         style="width: @region.Percentage%"
+                                                         aria-valuenow="@region.Percentage" aria-valuemin="0" aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Global chart instances
+        let hourlyChart = null;
+        let cameraChart = null;
+        let dailyChart = null;
+
+        // Period select handler
+        document.getElementById('periodSelect').addEventListener('change', function() {
+            const isCustom = this.value === 'custom';
+            document.getElementById('startDateDiv').style.display = isCustom ? 'block' : 'none';
+            document.getElementById('endDateDiv').style.display = isCustom ? 'block' : 'none';
+        });
+
+        // Form submit handler - AJAX
+        document.getElementById('filterForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Ngăn form submit mặc định
+            loadReportData();
+        });
+
+        // Hàm load dữ liệu báo cáo bằng AJAX
+        async function loadReportData() {
+            const form = document.getElementById('filterForm');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+
+            // Hiển thị loading
+            showLoading();
+
+            try {
+                const response = await fetch(`/Admin/Reports/GetOverviewData?${params.toString()}`);
+                if (!response.ok) {
+                    throw new Error('Không thể tải dữ liệu');
+                }
+
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Lỗi khi tải dữ liệu:', error);
+                alert('Có lỗi xảy ra khi làm mới dữ liệu. Vui lòng thử lại.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Hiển thị loading overlay
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('active');
+            document.getElementById('refreshBtn').disabled = true;
+        }
+
+        // Ẩn loading overlay
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+            document.getElementById('refreshBtn').disabled = false;
+        }
+
+        // Cập nhật UI với dữ liệu mới
+        function updateUI(data) {
+            // Cập nhật thời gian báo cáo
+            const startDate = new Date(data.startDate).toLocaleString('vi-VN');
+            const endDate = new Date(data.endDate).toLocaleString('vi-VN');
+            document.querySelector('.alert-info strong:nth-of-type(1)').textContent = startDate;
+            document.querySelector('.alert-info strong:nth-of-type(2)').textContent = endDate;
+
+            // Cập nhật các số liệu thống kê
+            const statCards = document.querySelectorAll('.stat-card h3');
+            statCards[0].textContent = data.totalRecognitions.toLocaleString('vi-VN');
+            statCards[1].textContent = data.uniqueVehicles.toLocaleString('vi-VN');
+            statCards[2].textContent = `${data.inCount} / ${data.outCount}`;
+            statCards[3].textContent = data.averageConfidence.toFixed(1) + '%';
+            statCards[4].textContent = data.successRate + '%';
+            statCards[5].textContent = data.averageProcessingTime.toFixed(0) + 'ms';
+
+            // Cập nhật biểu đồ theo giờ
+            updateHourlyChart(data.hourlyStats);
+
+            // Cập nhật biểu đồ theo camera
+            updateCameraChart(data.cameraStats);
+
+            // Cập nhật biểu đồ theo ngày (nếu có)
+            if (data.dailyStats && data.dailyStats.length > 0) {
+                updateDailyChart(data.dailyStats);
+            }
+
+            // Cập nhật bảng thống kê theo vùng
+            updateRegionStats(data.regionStats);
+
+            // Cập nhật link Export CSV
+            updateExportLink(data.period, data.startDate, data.endDate);
+        }
+
+        // Cập nhật biểu đồ theo giờ
+        function updateHourlyChart(hourlyStats) {
+            if (hourlyChart) {
+                hourlyChart.data.labels = hourlyStats.map(h => h.hour + ':00');
+                hourlyChart.data.datasets[0].data = hourlyStats.map(h => h.inCount);
+                hourlyChart.data.datasets[1].data = hourlyStats.map(h => h.outCount);
+                hourlyChart.update();
+            }
+        }
+
+        // Cập nhật biểu đồ theo camera
+        function updateCameraChart(cameraStats) {
+            if (cameraChart) {
+                cameraChart.data.labels = cameraStats.map(c => c.cameraName);
+                cameraChart.data.datasets[0].data = cameraStats.map(c => c.totalRecognitions);
+                cameraChart.update();
+            }
+        }
+
+        // Cập nhật biểu đồ theo ngày
+        function updateDailyChart(dailyStats) {
+            if (dailyChart) {
+                dailyChart.data.labels = dailyStats.map(d => new Date(d.date).toLocaleDateString('vi-VN'));
+                dailyChart.data.datasets[0].data = dailyStats.map(d => d.total);
+                dailyChart.data.datasets[1].data = dailyStats.map(d => d.uniqueVehicles);
+                dailyChart.update();
+            }
+        }
+
+        // Cập nhật bảng thống kê theo vùng
+        function updateRegionStats(regionStats) {
+            const tbody = document.querySelector('.table-striped tbody');
+            if (tbody && regionStats && regionStats.length > 0) {
+                tbody.innerHTML = '';
+                regionStats.forEach(region => {
+                    const row = `
+                        <tr>
+                            <td><strong>${region.region}</strong></td>
+                            <td>${region.count}</td>
+                            <td>${region.percentage.toFixed(1)}%</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" style="width: ${region.percentage}%"
+                                         aria-valuenow="${region.percentage}" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+
+        // Cập nhật link Export CSV
+        function updateExportLink(period, startDate, endDate) {
+            const exportLink = document.querySelector('.btn-success');
+            if (exportLink) {
+                const start = startDate ? new Date(startDate).toISOString().split('T')[0] : '';
+                const end = endDate ? new Date(endDate).toISOString().split('T')[0] : '';
+                exportLink.href = `/Admin/Reports/ExportCsv?period=${period}&startDate=${start}&endDate=${end}`;
+            }
+        }
+
+        // Khởi tạo biểu đồ ban đầu
+        // Biểu đồ theo giờ
+        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+        const hourlyData = @Html.Raw(Json.Serialize(Model.HourlyStats));
+
+        hourlyChart = new Chart(hourlyCtx, {
+            type: 'bar',
+            data: {
+                labels: hourlyData.map(h => h.hour + ':00'),
+                datasets: [{
+                    label: 'Vào',
+                    data: hourlyData.map(h => h.inCount),
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Ra',
+                    data: hourlyData.map(h => h.outCount),
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Biểu đồ theo camera
+        const cameraCtx = document.getElementById('cameraChart').getContext('2d');
+        const cameraData = @Html.Raw(Json.Serialize(Model.CameraStats));
+
+        cameraChart = new Chart(cameraCtx, {
+            type: 'doughnut',
+            data: {
+                labels: cameraData.map(c => c.cameraName),
+                datasets: [{
+                    data: cameraData.map(c => c.totalRecognitions),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)',
+                        'rgba(255, 159, 64, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+
+        // Biểu đồ theo ngày (nếu có)
+        @if (Model.DailyStats.Any())
+        {
+            <text>
+            const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+            const dailyData = @Html.Raw(Json.Serialize(Model.DailyStats));
+
+            dailyChart = new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: dailyData.map(d => new Date(d.date).toLocaleDateString('vi-VN')),
+                    datasets: [{
+                        label: 'Tổng nhận dạng',
+                        data: dailyData.map(d => d.total),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Xe duy nhất',
+                        data: dailyData.map(d => d.uniqueVehicles),
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            </text>
+        }
+    </script>
+}

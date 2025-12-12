@@ -1,0 +1,283 @@
+@model Recognition
+@{
+    ViewData["Title"] = "Chi tiết nhận dạng";
+    var directionClass = Model.Direction?.ToLower() == "in" ? "success" : "danger";
+    var directionIcon = Model.Direction?.ToLower() == "in" ? "fa-arrow-right-to-bracket" : "fa-arrow-right-from-bracket";
+    var directionText = Model.Direction?.ToLower() == "in" ? "Vào" : "Ra";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recognitionDetail.css" />
+}
+
+<div class="detail-container">
+    <a href="@Url.Action("History", "Recognition")" class="back-button">
+        <i class="fa-solid fa-arrow-left"></i>
+        Quay lại lịch sử
+    </a>
+
+    <div class="detail-header">
+        <h1>
+            <span>Biển số quét được:</span>
+            @(Model.PlateNorm ?? Model.PlateTextRaw ?? "Không xác định")
+        </h1>
+        <div class="meta">
+            <div class="meta-item">
+                <i class="fa-solid @directionIcon"></i>
+                <span class="badge badge-lg bg-@directionClass">@directionText</span>
+            </div>
+            <div class="meta-item">
+                <i class="fa-solid fa-calendar"></i>
+                <span>@Model.DetectedAt.ToString("dd/MM/yyyy HH:mm:ss")</span>
+            </div>
+            @if (Model.Camera != null)
+            {
+                <div class="meta-item">
+                    <i class="fa-solid fa-video"></i>
+                    <span>@Model.Camera.Name</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <!-- Hình ảnh gốc -->
+        <div class="image-card">
+            <h3>
+                <i class="fa-solid fa-image"></i>
+                Hình ảnh gốc
+            </h3>
+            @if (!string.IsNullOrEmpty(Model.ImagePath) && System.IO.File.Exists(Model.ImagePath))
+            {
+                <div class="image-container">
+                    <img src="@Url.Content($"~/uploads/{System.IO.Path.GetFileName(Model.ImagePath)}")"
+                         alt="Hình ảnh gốc"
+                         onclick="window.open(this.src, '_blank')" />
+                </div>
+                <small class="text-muted">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Nhấp vào ảnh để xem kích thước đầy đủ
+                </small>
+            }
+            else
+            {
+                <div class="image-container no-image">
+                    <i class="fa-solid fa-image-slash"></i>
+                    <p>Không có hình ảnh</p>
+                </div>
+            }
+        </div>
+
+        <!-- Hình ảnh biển số -->
+        <div class="image-card">
+            <h3>
+                <i class="fa-solid fa-crop"></i>
+                Biển số cắt
+            </h3>
+            @if (!string.IsNullOrEmpty(Model.PlateCropPath) && System.IO.File.Exists(Model.PlateCropPath))
+            {
+                <div class="image-container">
+                    <img src="@Url.Content($"~/uploads/{System.IO.Path.GetFileName(Model.PlateCropPath)}")"
+                         alt="Biển số cắt"
+                         onclick="window.open(this.src, '_blank')" />
+                </div>
+                <small class="text-muted">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Nhấp vào ảnh để xem kích thước đầy đủ
+                </small>
+            }
+            else
+            {
+                <div class="image-container no-image">
+                    <i class="fa-solid fa-image-slash"></i>
+                    <p>Không có hình ảnh</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <!-- Thông tin biển số -->
+        <div class="detail-card">
+            <h3>
+                <i class="fa-solid fa-rectangle-list"></i>
+                Thông tin biển số
+            </h3>
+            <div class="info-row">
+                <span class="info-label">Biển số gốc:</span>
+                <span class="info-value">@(Model.PlateTextRaw ?? "N/A")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Biển số chuẩn hóa:</span>
+                <span class="info-value">@(Model.PlateNorm ?? "N/A")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Khu vực:</span>
+                <span class="info-value">@(Model.Region ?? "N/A")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Hướng:</span>
+                <span class="info-value">
+                    <span class="badge bg-@directionClass">
+                        <i class="fa-solid @directionIcon"></i>
+                        @directionText
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Độ tin cậy -->
+        <div class="detail-card">
+            <h3>
+                <i class="fa-solid fa-chart-line"></i>
+                Độ tin cậy
+            </h3>
+            <div class="confidence-bar">
+                <div class="confidence-label">
+                    <span>Confidence Score</span>
+                    <span>@string.Format("{0:F2}", Model.Confidence)%</span>
+                </div>
+                <div class="confidence-progress">
+                    <div class="confidence-fill" style="width: @Model.Confidence%">
+                        @string.Format("{0:F1}", Model.Confidence)%
+                    </div>
+                </div>
+            </div>
+            @if (Model.Confidence >= 90)
+            {
+                <div class="alert alert-success mt-3 mb-0">
+                    <i class="fa-solid fa-circle-check"></i>
+                    Độ tin cậy rất cao
+                </div>
+            }
+            else if (Model.Confidence >= 70)
+            {
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Độ tin cậy trung bình
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger mt-3 mb-0">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    Độ tin cậy thấp
+                </div>
+            }
+        </div>
+
+        <!-- Thông tin camera -->
+        <div class="detail-card">
+            <h3>
+                <i class="fa-solid fa-video"></i>
+                Thông tin camera
+            </h3>
+            @if (Model.Camera != null)
+            {
+                <div class="info-row">
+                    <span class="info-label">Tên camera:</span>
+                    <span class="info-value">@Model.Camera.Name</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Vị trí:</span>
+                    <span class="info-value">@(Model.Camera.LocationNote ?? "N/A")</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Camera.IpAddress))
+                {
+                    <div class="info-row">
+                        <span class="info-label">IP Address:</span>
+                        <span class="info-value">@Model.Camera.IpAddress</span>
+                    </div>
+                }
+                <div class="info-row">
+                    <span class="info-label">Trạng thái:</span>
+                    <span class="info-value">
+                        <span class="badge bg-@(Model.Camera.IsActive ? "success" : "secondary")">
+                            @(Model.Camera.IsActive ? "Hoạt động" : "Ngừng")
+                        </span>
+                    </span>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted text-center">Không có thông tin camera</p>
+            }
+        </div>
+
+        <!-- Thông tin thời gian -->
+        <div class="detail-card">
+            <h3>
+                <i class="fa-solid fa-clock"></i>
+                Thông tin thời gian
+            </h3>
+            <div class="info-row">
+                <span class="info-label">Phát hiện lúc:</span>
+                <span class="info-value">@Model.DetectedAt.ToString("dd/MM/yyyy HH:mm:ss")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Tạo bản ghi:</span>
+                <span class="info-value">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</span>
+            </div>
+            @if (Model.ProcessingMs.HasValue)
+            {
+                <div class="info-row">
+                    <span class="info-label">Thời gian xử lý:</span>
+                    <span class="info-value">@Model.ProcessingMs ms</span>
+                </div>
+            }
+        </div>
+
+        <!-- Thông tin kỹ thuật -->
+        <div class="detail-card">
+            <h3>
+                <i class="fa-solid fa-microchip"></i>
+                Thông tin kỹ thuật
+            </h3>
+            <div class="info-row">
+                <span class="info-label">OCR Engine:</span>
+                <span class="info-value">@(Model.OcrEngine ?? "N/A")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">OCR Version:</span>
+                <span class="info-value">@(Model.OcrVersion ?? "N/A")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Recognition ID:</span>
+                <span class="info-value">#@Model.RecognitionId</span>
+            </div>
+            @if (Model.VehicleId.HasValue)
+            {
+                <div class="info-row">
+                    <span class="info-label">Vehicle ID:</span>
+                    <span class="info-value">#@Model.VehicleId</span>
+                </div>
+            }
+            @if (Model.BestTagId.HasValue)
+            {
+                <div class="info-row">
+                    <span class="info-label">Best Tag ID:</span>
+                    <span class="info-value">#@Model.BestTagId</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Bounding Boxes JSON -->
+    @if (!string.IsNullOrEmpty(Model.BBoxesJson))
+    {
+        <div class="detail-card">
+            <h3>
+                <i class="fa-solid fa-code"></i>
+                Bounding Boxes (JSON)
+            </h3>
+            <div class="json-viewer">@Model.BBoxesJson</div>
+        </div>
+    }
+
+    <div class="text-center mt-4">
+        <a href="@Url.Action("History", "Recognition")" class="back-button">
+            <i class="fa-solid fa-arrow-left"></i>
+            Quay lại lịch sử
+        </a>
+    </div>
+</div>

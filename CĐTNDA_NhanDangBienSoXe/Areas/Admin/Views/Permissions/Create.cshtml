@@ -1,0 +1,126 @@
+@model PermissionCreateViewModel
+@{
+    ViewData["Title"] = "Tạo quyền mới";
+}
+
+<div class="admin-form-container">
+    <div class="form-header">
+       @*  <h2>
+            <i class="fas fa-key"></i>
+            Tạo quyền mới
+        </h2> *@
+        <a href="/Admin/Permissions" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post" class="admin-form">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="form-section">
+            <h4 class="section-title">
+                <i class="fas fa-info-circle"></i> Thông tin quyền
+            </h4>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Name" class="form-label">
+                        Tên quyền <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+                        <input asp-for="Name" class="form-control" placeholder="Nhập tên quyền (VD: Xem Camera)" />
+                    </div>
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Code" class="form-label">
+                        Mã quyền <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-code"></i></span>
+                        <input asp-for="Code" class="form-control" placeholder="Nhập mã (VD: VIEW_CAMERA)" style="font-family: monospace;" />
+                    </div>
+                    <span asp-validation-for="Code" class="text-danger"></span>
+                    <small class="form-text text-muted">
+                        Chỉ chứa chữ IN HOA và dấu gạch dưới (_)
+                    </small>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Category" class="form-label">Danh mục</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-folder"></i></span>
+                        <input asp-for="Category" class="form-control" placeholder="Nhập danh mục (VD: Camera, Thống kê...)" list="categoryList" />
+                        <datalist id="categoryList">
+                            <option value="Camera"></option>
+                            <option value="Nhận dạng"></option>
+                            <option value="Thống kê"></option>
+                            <option value="Quản trị"></option>
+                        </datalist>
+                    </div>
+                    <span asp-validation-for="Category" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label asp-for="Description" class="form-label">Mô tả</label>
+                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Mô tả chi tiết về quyền này..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <strong>Gợi ý:</strong> Đặt tên quyền rõ ràng và mã quyền theo chuẩn.
+            Ví dụ: "Xem Camera" → <code>VIEW_CAMERA</code>, "Quản lý Người dùng" → <code>MANAGE_USERS</code>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Tạo quyền
+            </button>
+            <a href="/Admin/Permissions" class="btn btn-danger">
+                <i class="fas fa-times"></i> Hủy
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Auto-generate code from name
+        document.getElementById('Name').addEventListener('input', function() {
+            const codeInput = document.getElementById('Code');
+            if (!codeInput.value) {
+                const name = this.value;
+                const code = name
+                    .toUpperCase()
+                    .replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, 'A')
+                    .replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, 'E')
+                    .replace(/Ì|Í|Ị|Ỉ|Ĩ/g, 'I')
+                    .replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, 'O')
+                    .replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, 'U')
+                    .replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, 'Y')
+                    .replace(/Đ/g, 'D')
+                    .replace(/[^A-Z0-9]/g, '_')
+                    .replace(/_+/g, '_')
+                    .replace(/^_|_$/g, '');
+                codeInput.value = code;
+            }
+        });
+
+        // Validate code format
+        document.getElementById('Code').addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+        });
+    </script>
+}

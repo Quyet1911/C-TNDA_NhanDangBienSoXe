@@ -1,0 +1,415 @@
+@model HomeDashboardViewModel
+@{
+    ViewData["Title"] = "Thống kê";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/stats.css" />
+}
+
+<div class="stats-container">
+    <!-- Header -->
+    <div class="stats-header">
+        <div>
+            <h1 class="page-title">
+                <i class="fas fa-chart-bar"></i> Thống kê nhận dạng
+            </h1>
+            <p class="text-muted">Tổng quan hoạt động hệ thống</p>
+        </div>
+        <a href="/Recognition" class="btn btn-primary">
+            <i class="fas fa-qrcode"></i> Quét mới
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+        <!-- Hôm nay -->
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="stat-label">Hôm nay</div>
+            <div class="stat-value">@Model.TodayTotalRecognitions</div>
+            <div class="stat-change">
+                <i class="fas fa-arrow-up"></i>
+                <span>@Model.TodayUniqueVehicles xe khác nhau</span>
+            </div>
+        </div>
+
+        <!-- Tuần này -->
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-week"></i>
+            </div>
+            <div class="stat-label">Tuần này</div>
+            <div class="stat-value">@Model.WeekTotalRecognitions</div>
+            <div class="stat-change">
+                <i class="fas fa-arrow-up"></i>
+                <span>@Model.WeekUniqueVehicles xe khác nhau</span>
+            </div>
+        </div>
+
+        <!-- Tháng này -->
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-label">Tháng này</div>
+            <div class="stat-value">@Model.MonthTotalRecognitions</div>
+            <div class="stat-change">
+                <i class="fas fa-arrow-up"></i>
+                <span>@Model.MonthUniqueVehicles xe khác nhau</span>
+            </div>
+        </div>
+
+        <!-- Camera -->
+        <div class="stat-card info">
+            <div class="stat-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <div class="stat-label">Camera</div>
+            <div class="stat-value">@Model.ActiveCameras/@Model.TotalCameras</div>
+            <div class="stat-change">
+                <i class="fas fa-check-circle"></i>
+                <span>@Model.ActiveCameras đang hoạt động</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="charts-grid">
+        <!-- Biểu đồ theo ngày -->
+        <div class="chart-card full-width">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-chart-line"></i>
+                    Thống kê 7 ngày gần đây
+                </h3>
+            </div>
+            <div class="chart-canvas">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Biểu đồ theo camera -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-video"></i>
+                    Theo camera
+                </h3>
+            </div>
+            <div class="chart-canvas">
+                <canvas id="cameraChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Biểu đồ theo giờ -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-clock"></i>
+                    Theo giờ (hôm nay)
+                </h3>
+            </div>
+            <div class="chart-canvas">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Biểu đồ Vào/Ra hôm nay -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-exchange-alt"></i>
+                    Vào/Ra hôm nay
+                </h3>
+            </div>
+            <div class="chart-canvas">
+                <canvas id="directionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Danh sách camera -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-video"></i>
+                    Trạng thái camera
+                </h3>
+            </div>
+            @if (Model.CameraStatuses.Any())
+            {
+                <div class="camera-list">
+                    @foreach (var camera in Model.CameraStatuses)
+                    {
+                        <div class="camera-item">
+                            <div class="camera-info">
+                                <div class="camera-icon">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                                <div class="camera-details">
+                                    <h4>@camera.Name</h4>
+                                    <p>@(camera.LocationNote ?? "Không có vị trí")</p>
+                                </div>
+                            </div>
+                            <div class="camera-status @(camera.IsActive ? "active" : "inactive")">
+                                <i class="fas fa-circle"></i>
+                                <span>@camera.StatusText</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-video-slash"></i>
+                    <p>Chưa có camera nào</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Hoạt động gần đây -->
+    @if (Model.RecentRecognitions.Any())
+    {
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="fas fa-history"></i>
+                    Hoạt động gần đây
+                </h3>
+                <a href="/Recognition/History" class="btn btn-sm btn-outline-primary">
+                    Xem tất cả <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="activity-list">
+                @foreach (var item in Model.RecentRecognitions)
+                {
+                    <div class="activity-item">
+                        <div class="activity-image">
+                            @if (!string.IsNullOrEmpty(item.ImagePath) && System.IO.File.Exists(item.ImagePath))
+                            {
+                                <img src="@Url.Content($"~/uploads/{System.IO.Path.GetFileName(item.ImagePath)}")" alt="@item.PlateNorm" />
+                            }
+                            else
+                            {
+                                <i class="fas fa-image"></i>
+                            }
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-plate">@(item.PlateNorm ?? "N/A")</div>
+                            <div class="activity-meta">
+                                <span><i class="fas fa-camera"></i> @(item.CameraName ?? "Unknown")</span>
+                                <span><i class="fas fa-clock"></i> @item.TimeAgo</span>
+                                @if (item.Confidence.HasValue)
+                                {
+                                    <span><i class="fas fa-percentage"></i> @string.Format("{0:F1}", item.Confidence)%</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="activity-direction @(item.Direction?.ToLower())">
+                            <i class="fas @item.DirectionIcon"></i>
+                            @item.DirectionText
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Chart.js configuration
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.color = '#6c757d';
+
+        // Màu sắc gradient
+        const primaryGradient = (ctx) => {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(102, 126, 234, 0.8)');
+            gradient.addColorStop(1, 'rgba(118, 75, 162, 0.8)');
+            return gradient;
+        };
+
+        const successGradient = (ctx) => {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
+            gradient.addColorStop(1, 'rgba(32, 201, 151, 0.8)');
+            return gradient;
+        };
+
+        const warningGradient = (ctx) => {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(255, 193, 7, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 152, 0, 0.8)');
+            return gradient;
+        };
+
+        // 1. Biểu đồ theo ngày (7 ngày gần đây)
+        fetch('/Stats/GetDailyStats')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('dailyChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => new Date(d.date).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' })),
+                        datasets: [
+                            {
+                                label: 'Tổng số',
+                                data: data.map(d => d.total),
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Vào',
+                                data: data.map(d => d.inCount),
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Ra',
+                                data: data.map(d => d.outCount),
+                                borderColor: '#ffc107',
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+        // 2. Biểu đồ theo camera
+        fetch('/Stats/GetCameraStats')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('cameraChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.map(d => d.cameraName),
+                        datasets: [{
+                            data: data.map(d => d.total),
+                            backgroundColor: [
+                                '#667eea',
+                                '#28a745',
+                                '#ffc107',
+                                '#17a2b8',
+                                '#dc3545',
+                                '#6c757d',
+                                '#e83e8c',
+                                '#fd7e14',
+                                '#20c997',
+                                '#6610f2'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            });
+
+        // 3. Biểu đồ theo giờ (hôm nay)
+        fetch('/Stats/GetHourlyStats')
+            .then(response => response.json())
+            .then(data => {
+                // Tạo mảng 24 giờ với giá trị 0
+                const hourlyData = Array(24).fill(0);
+                data.forEach(d => {
+                    hourlyData[d.hour] = d.total;
+                });
+
+                const ctx = document.getElementById('hourlyChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({ length: 24 }, (_, i) => `${i}h`),
+                        datasets: [{
+                            label: 'Số lượng',
+                            data: hourlyData,
+                            backgroundColor: primaryGradient(ctx),
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+        // 4. Biểu đồ Vào/Ra hôm nay
+        const directionCtx = document.getElementById('directionChart').getContext('2d');
+        new Chart(directionCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Vào', 'Ra'],
+                datasets: [{
+                    data: [@Model.TodayInCount, @Model.TodayOutCount],
+                    backgroundColor: [
+                        '#28a745',
+                        '#ffc107'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+}

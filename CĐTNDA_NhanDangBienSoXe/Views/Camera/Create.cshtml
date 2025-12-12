@@ -1,0 +1,83 @@
+@model Camera
+@{
+    ViewData["Title"] = "Thêm Camera";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/camera.css" />
+}
+
+<div class="camera-container">
+    <div class="camera-header">
+        <div>
+            <h1 class="page-title">
+                <i class="fas fa-plus"></i> Thêm Camera Mới
+            </h1>
+        </div>
+        <a href="/Camera" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label">
+                                <i class="fas fa-tag"></i> Tên camera
+                            </label>
+                            <input asp-for="Name" class="form-control" placeholder="VD: Camera cổng chính" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LocationNote" class="form-label">
+                                <i class="fas fa-map-marker-alt"></i> Vị trí
+                            </label>
+                            <input asp-for="LocationNote" class="form-control" placeholder="VD: Cổng vào tầng 1" />
+                            <span asp-validation-for="LocationNote" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="IpAddress" class="form-label">
+                                <i class="fas fa-network-wired"></i> IP Address
+                            </label>
+                            <input asp-for="IpAddress" class="form-control" placeholder="VD: 192.168.1.100" />
+                            <span asp-validation-for="IpAddress" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="StreamUrl" class="form-label">
+                                <i class="fas fa-link"></i> Stream URL
+                            </label>
+                            <input asp-for="StreamUrl" class="form-control" placeholder="VD: rtsp://192.168.1.100:554/stream" />
+                            <span asp-validation-for="StreamUrl" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label">
+                                Kích hoạt ngay
+                            </label>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Lưu
+                            </button>
+                            <a href="/Camera" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

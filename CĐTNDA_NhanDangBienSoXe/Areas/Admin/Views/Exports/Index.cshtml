@@ -1,0 +1,166 @@
+﻿@{
+    ViewData["Title"] = "Xuất dữ liệu";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/exports.css" />
+}
+
+<div class="container-fluid">
+   @*  <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-file-export"></i> Xuất dữ liệu</h2>
+    </div> *@
+
+    <!-- Info Box -->
+    <div class="export-info">
+        <i class="fas fa-info-circle"></i>
+        <strong>Hướng dẫn:</strong> Chọn loại dữ liệu bạn muốn xuất và định dạng file (CSV hoặc Excel).
+        Dữ liệu sẽ được tải xuống tự động.
+    </div>
+
+    <!-- Export Recognitions Card -->
+    <div class="export-card">
+        <div class="export-card-header">
+            <div class="export-icon recognitions">
+                <i class="fas fa-car"></i>
+            </div>
+            <div class="export-card-title">
+                <h4>Xuất dữ liệu nhận dạng</h4>
+                <p>Xuất danh sách biển số xe đã được nhận dạng</p>
+            </div>
+        </div>
+
+        <form id="exportRecognitionsForm" method="post" action="@Url.Action("ExportRecognitions")">
+            @Html.AntiForgeryToken()
+
+            <div class="export-filters">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Từ ngày</label>
+                        <input type="date" name="startDate" class="form-control" value="@DateTime.Today.AddDays(-7).ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Đến ngày</label>
+                        <input type="date" name="endDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Camera</label>
+                        <select name="cameraId" class="form-select">
+                            <option value="">Tất cả</option>
+                            @* Sẽ load từ database *@
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Hướng</label>
+                        <select name="direction" class="form-select">
+                            <option value="">Tất cả</option>
+                            <option value="In">Vào</option>
+                            <option value="Out">Ra</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="export-buttons">
+                <button type="submit" name="format" value="csv" class="btn btn-export btn-export-csv">
+                    <i class="fas fa-file-csv"></i> Xuất CSV
+                </button>
+                <button type="submit" name="format" value="excel" class="btn btn-export btn-export-excel">
+                    <i class="fas fa-file-excel"></i> Xuất Excel
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Export Cameras Card -->
+    <div class="export-card">
+        <div class="export-card-header">
+            <div class="export-icon cameras">
+                <i class="fas fa-video"></i>
+            </div>
+            <div class="export-card-title">
+                <h4>Xuất danh sách camera</h4>
+                <p>Xuất thông tin tất cả camera trong hệ thống</p>
+            </div>
+        </div>
+
+        <form id="exportCamerasForm" method="post" action="@Url.Action("ExportCameras")">
+            @Html.AntiForgeryToken()
+
+            <div class="export-buttons">
+                <button type="submit" name="format" value="csv" class="btn btn-export btn-export-csv">
+                    <i class="fas fa-file-csv"></i> Xuất CSV
+                </button>
+                <button type="submit" name="format" value="excel" class="btn btn-export btn-export-excel">
+                    <i class="fas fa-file-excel"></i> Xuất Excel
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Export Users Card -->
+    <div class="export-card">
+        <div class="export-card-header">
+            <div class="export-icon users">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="export-card-title">
+                <h4>Xuất danh sách người dùng</h4>
+                <p>Xuất thông tin người dùng và quyền hạn</p>
+            </div>
+        </div>
+
+        <form id="exportUsersForm" method="post" action="@Url.Action("ExportUsers")">
+            @Html.AntiForgeryToken()
+
+            <div class="export-buttons">
+                <button type="submit" name="format" value="csv" class="btn btn-export btn-export-csv">
+                    <i class="fas fa-file-csv"></i> Xuất CSV
+                </button>
+                <button type="submit" name="format" value="excel" class="btn btn-export btn-export-excel">
+                    <i class="fas fa-file-excel"></i> Xuất Excel
+                </button>
+            </div>
+        </form>
+    </div>
+    
+</div>
+
+@section Scripts {
+    <script>
+        // Load statistics
+        async function loadStatistics() {
+            // TODO: Tạo API để lấy thống kê
+            // Tạm thời hiển thị giá trị mẫu
+            document.getElementById('totalRecognitions').textContent = '1,234';
+            document.getElementById('totalCameras').textContent = '5';
+            document.getElementById('totalUsers').textContent = '12';
+        }
+
+        // Load cameras cho dropdown
+        async function loadCameras() {
+            try {
+                // TODO: Tạo API để lấy danh sách camera
+                // const response = await fetch('/Admin/api/cameras');
+                // const cameras = await response.json();
+                // Populate dropdown
+            } catch (error) {
+                console.error('Error loading cameras:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatistics();
+            loadCameras();
+        });
+
+        // Form submission handlers (để show loading nếu cần)
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                // Optional: Show loading spinner
+                console.log('Exporting data...');
+            });
+        });
+    </script>
+}

@@ -1,0 +1,195 @@
+@model List<CĐTNDA_NhanDangBienSoXe.Models.AuditLog>
+@{
+    ViewData["Title"] = "Nhật ký hoạt động";
+    var startDate = ViewBag.StartDate as DateTime?;
+    var endDate = ViewBag.EndDate as DateTime?;
+    var action = ViewBag.Action as string;
+    var page = (int)ViewBag.Page;
+    var pageSize = (int)ViewBag.PageSize;
+    var totalCount = (int)ViewBag.TotalCount;
+    var totalPages = (int)ViewBag.TotalPages;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auditlogs.css" />
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-history"></i> Nhật ký hoạt động</h2>
+        <div>
+            <span class="badge bg-primary">Tổng: @totalCount bản ghi</span>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form method="get" action="@Url.Action("Index")">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Từ ngày</label>
+                    <input type="date" name="startDate" class="form-control" value="@startDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Đến ngày</label>
+                    <input type="date" name="endDate" class="form-control" value="@endDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hành động</label>
+                    <input type="text" name="action" class="form-control" placeholder="Tìm theo hành động..." value="@action" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Tìm kiếm
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="log-table">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 5%">ID</th>
+                        <th style="width: 15%">Thời gian</th>
+                        <th style="width: 12%">Người dùng</th>
+                        <th style="width: 15%">Hành động</th>
+                        <th style="width: 38%">Chi tiết</th>
+                        <th style="width: 15%">IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var log in Model)
+                        {
+                            var badgeClass = "action-default";
+                            if (log.Action.Contains("Đăng nhập")) badgeClass = "action-login";
+                            else if (log.Action.Contains("Đăng xuất")) badgeClass = "action-logout";
+                            else if (log.Action.Contains("Tạo") || log.Action.Contains("Thêm")) badgeClass = "action-create";
+                            else if (log.Action.Contains("Cập nhật") || log.Action.Contains("Sửa")) badgeClass = "action-update";
+                            else if (log.Action.Contains("Xóa")) badgeClass = "action-delete";
+                            else if (log.Action.Contains("Xuất")) badgeClass = "action-export";
+                            else if (log.Action.Contains("Nhận dạng")) badgeClass = "action-recognition";
+                            else if (log.Action.Contains("Camera")) badgeClass = "action-camera";
+
+                            <tr>
+                                <td>@log.AuditLogId</td>
+                                <td>
+                                    <small class="text-muted">
+                                        @log.CreatedAt.ToString("dd/MM/yyyy")<br />
+                                        @log.CreatedAt.ToString("HH:mm:ss")
+                                    </small>
+                                </td>
+                                <td>
+                                    @if (log.User != null)
+                                    {
+                                        <strong>@log.User.FullName</strong><br />
+                                        <small class="text-muted">@log.User.UserName</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">@(log.UserName ?? "System")</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass badge-action">@log.Action</span>
+                                </td>
+                                <td>
+                                    <small>@(log.Detail ?? "-")</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted font-monospace">@(log.IpAddress ?? "-")</small>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                Không có dữ liệu nhật ký
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <!-- Previous -->
+                <li class="page-item @(page <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { startDate = startDate?.ToString("yyyy-MM-dd"), endDate = endDate?.ToString("yyyy-MM-dd"), action = action, page = page - 1, pageSize = pageSize })">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+
+                <!-- Page numbers -->
+                @{
+                    var startPage = Math.Max(1, page - 2);
+                    var endPage = Math.Min(totalPages, page + 2);
+                }
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { startDate = startDate?.ToString("yyyy-MM-dd"), endDate = endDate?.ToString("yyyy-MM-dd"), action = action, page = 1, pageSize = pageSize })">1</a>
+                    </li>
+                    if (startPage > 2)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == page ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { startDate = startDate?.ToString("yyyy-MM-dd"), endDate = endDate?.ToString("yyyy-MM-dd"), action = action, page = i, pageSize = pageSize })">@i</a>
+                    </li>
+                }
+
+                @if (endPage < totalPages)
+                {
+                    if (endPage < totalPages - 1)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { startDate = startDate?.ToString("yyyy-MM-dd"), endDate = endDate?.ToString("yyyy-MM-dd"), action = action, page = totalPages, pageSize = pageSize })">@totalPages</a>
+                    </li>
+                }
+
+                <!-- Next -->
+                <li class="page-item @(page >= totalPages ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { startDate = startDate?.ToString("yyyy-MM-dd"), endDate = endDate?.ToString("yyyy-MM-dd"), action = action, page = page + 1, pageSize = pageSize })">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+    <!-- Stats -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <p class="mb-0 text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Hiển thị @((page - 1) * pageSize + 1) - @Math.Min(page * pageSize, totalCount) trong tổng số @totalCount bản ghi
+                        | Khoảng thời gian: <strong>@startDate?.ToString("dd/MM/yyyy")</strong> - <strong>@endDate?.ToString("dd/MM/yyyy")</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

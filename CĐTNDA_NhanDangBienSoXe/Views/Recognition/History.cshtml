@@ -1,0 +1,368 @@
+﻿@model RecognitionHistoryViewModel
+@{
+    ViewData["Title"] = "Lịch sử nhận dạng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recognition.css" />
+}
+
+<div class="history-container">
+    <!-- Header -->
+    <div class="history-header">
+        <div>
+            <h1 class="page-title">
+                <i class="fas fa-history"></i> Lịch sử nhận dạng
+            </h1>
+            <p class="text-muted">Tổng số: @Model.TotalCount kết quả</p>
+        </div>
+        <a href="/Recognition" class="btn btn-primary">
+            <i class="fas fa-qrcode"></i> Quét mới
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="get" asp-action="History" id="filterForm">
+            <div class="row g-3">
+                <!-- Search Plate -->
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-search"></i> Tìm biển số</label>
+                    <input type="text" class="form-control" name="searchPlate" value="@Model.SearchPlate" placeholder="Nhập biển số...">
+                </div>
+
+                <!-- Camera Filter -->
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-video"></i> Camera</label>
+                    <select class="form-select" name="cameraId">
+                        <option value="">-- Tất cả camera --</option>
+                        @foreach (var camera in ViewBag.Cameras)
+                        {
+                            <option value="@camera.CameraId" selected="@(Model.FilterCameraId == camera.CameraId)">
+                                @camera.Name
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Direction Filter -->
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-arrows-alt-h"></i> Hướng</label>
+                    <select class="form-select" name="direction">
+                        <option value="">-- Tất cả --</option>
+                        <option value="In" selected="@(Model.FilterDirection == "In")">Vào</option>
+                        <option value="Out" selected="@(Model.FilterDirection == "Out")">Ra</option>
+                    </select>
+                </div>
+
+                <!-- From Date -->
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-calendar"></i> Từ ngày</label>
+                    <input type="date" class="form-control" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")">
+                </div>
+
+                <!-- To Date -->
+                <div class="col-md-2">
+                    <label class="form-label"><i class="fas fa-calendar"></i> Đến ngày</label>
+                    <input type="date" class="form-control" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")">
+                </div>
+            </div>
+
+            <div class="filter-actions mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Lọc
+                </button>
+                <a href="/Recognition/History" class="btn btn-outline-secondary">
+                    <i class="fas fa-redo"></i> Đặt lại
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results List -->
+    <div class="history-list">
+        @if (Model.Recognitions == null || !Model.Recognitions.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>Không tìm thấy kết quả nào</p>
+                @if (!string.IsNullOrEmpty(Model.SearchPlate) || Model.FilterCameraId.HasValue || !string.IsNullOrEmpty(Model.FilterDirection) || Model.FromDate.HasValue || Model.ToDate.HasValue)
+                {
+                    <a href="/Recognition/History" class="btn btn-outline-primary mt-2">
+                        <i class="fas fa-times"></i> Xóa bộ lọc
+                    </a>
+                }
+                else
+                {
+                    <a href="/Recognition" class="btn btn-primary mt-2">
+                        <i class="fas fa-qrcode"></i> Bắt đầu quét
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            var inRecognitions = Model.Recognitions.Where(r => r.Direction?.ToLower() == "in").ToList();
+            var outRecognitions = Model.Recognitions.Where(r => r.Direction?.ToLower() == "out").ToList();
+
+            <div class="history-columns">
+                <!-- Cột Vào -->
+                <div class="history-column">
+                    <div class="column-header in-header">
+                        <i class="fas fa-arrow-right"></i> Vào
+                        <span class="badge bg-light text-dark">@inRecognitions.Count</span>
+                    </div>
+                    <div class="column-items">
+                        @foreach (var item in inRecognitions)
+                        {
+                            <div class="history-item">
+                                <div class="history-image">
+                                    @if (!string.IsNullOrEmpty(item.PlateCropPath))
+                                    {
+                                        <img src="@item.PlateCropPath" alt="Plate">
+                                    }
+                                    else
+                                    {
+                                        <div class="no-image">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="history-info">
+                                    <div class="plate-number">
+                                        <strong>@(item.PlateNorm ?? item.PlateText ?? "N/A")</strong>
+                                    </div>
+
+                                    <div class="history-meta">
+                                        @if (!string.IsNullOrEmpty(item.CameraName))
+                                        {
+                                            <span>
+                                                <i class="fas fa-video"></i> @item.CameraName
+                                            </span>
+                                        }
+
+                                        @if (item.Confidence.HasValue)
+                                        {
+                                            <span>
+                                                <i class="fas fa-percentage"></i> @item.Confidence.Value.ToString("F1")%
+                                            </span>
+                                        }
+
+                                        <span>
+                                            <i class="fas fa-clock"></i> @item.DetectedAt.ToString("dd/MM/yyyy HH:mm:ss")
+                                        </span>
+
+                                        <span class="text-muted">
+                                            (@item.TimeAgo)
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="history-actions">
+                                    <a href="/Recognition/Details/@item.RecognitionId" class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="deleteRecognition(@item.RecognitionId)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        @if (!inRecognitions.Any())
+                        {
+                            <div class="empty-column">
+                                <i class="fas fa-inbox"></i>
+                                <p>Không có xe vào</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Cột Ra -->
+                <div class="history-column">
+                    <div class="column-header out-header">
+                        <i class="fas fa-arrow-left"></i> Ra
+                        <span class="badge bg-light text-dark">@outRecognitions.Count</span>
+                    </div>
+                    <div class="column-items">
+                        @foreach (var item in outRecognitions)
+                        {
+                            <div class="history-item">
+                                <div class="history-image">
+                                    @if (!string.IsNullOrEmpty(item.PlateCropPath))
+                                    {
+                                        <img src="@item.PlateCropPath" alt="Plate">
+                                    }
+                                    else
+                                    {
+                                        <div class="no-image">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="history-info">
+                                    <div class="plate-number">
+                                        <strong>@(item.PlateNorm ?? item.PlateText ?? "N/A")</strong>
+                                    </div>
+
+                                    <div class="history-meta">
+                                        @if (!string.IsNullOrEmpty(item.CameraName))
+                                        {
+                                            <span>
+                                                <i class="fas fa-video"></i> @item.CameraName
+                                            </span>
+                                        }
+
+                                        @if (item.Confidence.HasValue)
+                                        {
+                                            <span>
+                                                <i class="fas fa-percentage"></i> @item.Confidence.Value.ToString("F1")%
+                                            </span>
+                                        }
+
+                                        <span>
+                                            <i class="fas fa-clock"></i> @item.DetectedAt.ToString("dd/MM/yyyy HH:mm:ss")
+                                        </span>
+
+                                        <span class="text-muted">
+                                            (@item.TimeAgo)
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="history-actions">
+                                    <a href="/Recognition/Details/@item.RecognitionId" class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Xóa" onclick="deleteRecognition(@item.RecognitionId)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        @if (!outRecognitions.Any())
+                        {
+                            <div class="empty-column">
+                                <i class="fas fa-inbox"></i>
+                                <p>Không có xe ra</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination-container">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            <!-- Previous Button -->
+                            <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
+                                <a class="page-link" href="@GetPageUrl(Model.PageNumber - 1)">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Page Numbers -->
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                if (i == 1 || i == Model.TotalPages || (i >= Model.PageNumber - 2 && i <= Model.PageNumber + 2))
+                                {
+                                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="@GetPageUrl(i)">@i</a>
+                                    </li>
+                                }
+                                else if (i == Model.PageNumber - 3 || i == Model.PageNumber + 3)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                }
+                            }
+
+                            <!-- Next Button -->
+                            <li class="page-item @(Model.PageNumber == Model.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="@GetPageUrl(Model.PageNumber + 1)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <div class="pagination-info text-center text-muted mt-2">
+                        Trang @Model.PageNumber / @Model.TotalPages
+                        (Hiển thị @((Model.PageNumber - 1) * Model.PageSize + 1) - @Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount) / @Model.TotalCount)
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        function deleteRecognition(id) {
+            if (!confirm('Bạn có chắc muốn xóa bản ghi này?\nHành động này không thể hoàn tác.')) {
+                return;
+            }
+
+            const form = document.getElementById('deleteForm');
+            const formData = new FormData(form);
+
+            fetch(`/Recognition/Delete/${id}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Có lỗi xảy ra: ' + error.message);
+            });
+        }
+    </script>
+}
+
+@functions {
+    string GetPageUrl(int page)
+    {
+        var query = new List<string> { $"page={page}" };
+
+        if (!string.IsNullOrEmpty(Model.SearchPlate))
+            query.Add($"searchPlate={Uri.EscapeDataString(Model.SearchPlate)}");
+
+        if (Model.FilterCameraId.HasValue)
+            query.Add($"cameraId={Model.FilterCameraId.Value}");
+
+        if (!string.IsNullOrEmpty(Model.FilterDirection))
+            query.Add($"direction={Model.FilterDirection}");
+
+        if (Model.FromDate.HasValue)
+            query.Add($"fromDate={Model.FromDate.Value:yyyy-MM-dd}");
+
+        if (Model.ToDate.HasValue)
+            query.Add($"toDate={Model.ToDate.Value:yyyy-MM-dd}");
+
+        return $"/Recognition/History?{string.Join("&", query)}";
+    }
+}

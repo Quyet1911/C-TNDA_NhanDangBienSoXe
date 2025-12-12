@@ -1,0 +1,159 @@
+@model RoleEditViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa vai trò";
+}
+
+<div class="admin-form-container">
+    <div class="form-header">
+        @* <h2>
+            <i class="fas fa-user-edit"></i>
+            Chỉnh sửa vai trò: <strong>@Model.Name</strong>
+        </h2> *@
+        <a href="/Admin/Roles" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <form asp-action="Edit" method="post" class="admin-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="RoleId" />
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="form-section">
+            <h4 class="section-title">
+                <i class="fas fa-info-circle"></i> Thông tin vai trò
+            </h4>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Name" class="form-label">
+                        Tên vai trò <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                        <input asp-for="Name" class="form-control" placeholder="Nhập tên vai trò" />
+                    </div>
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label asp-for="Description" class="form-label">Mô tả</label>
+                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Mô tả về vai trò này..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4 class="section-title">
+                <i class="fas fa-key"></i> Phân quyền
+                <small class="text-muted">(chọn các quyền cho vai trò này)</small>
+            </h4>
+
+            @if (ViewBag.Permissions != null && ((List<Permission>)ViewBag.Permissions).Any())
+            {
+                var permissions = (List<Permission>)ViewBag.Permissions;
+                var permissionGroups = permissions.GroupBy(p => p.Category ?? "Khác").OrderBy(g => g.Key);
+
+                foreach (var group in permissionGroups)
+                {
+                    <div class="permission-category mb-4">
+                        <h5 class="category-title">
+                            <i class="fas fa-folder-open"></i> @group.Key
+                        </h5>
+                        <div class="row">
+                            @foreach (var permission in group.OrderBy(p => p.Name))
+                            {
+                                var isChecked = Model.PermissionIds != null && Model.PermissionIds.Contains(permission.PermissionId);
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="permission-checkbox">
+                                        <input type="checkbox"
+                                               name="PermissionIds"
+                                               value="@permission.PermissionId"
+                                               id="perm_@permission.PermissionId"
+                                               class="form-check-input"
+                                               @(isChecked ? "checked" : "") />
+                                        <label for="perm_@permission.PermissionId" class="form-check-label">
+                                            <i class="fas fa-shield-alt text-primary"></i>
+                                            <strong>@permission.Name</strong>
+                                            <br>
+                                            <small class="text-muted">@permission.Code</small>
+                                            @if (!string.IsNullOrEmpty(permission.Description))
+                                            {
+                                                <br>
+                                                <small class="text-secondary">@permission.Description</small>
+                                            }
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Chưa có quyền nào trong hệ thống.
+                </div>
+            }
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Cập nhật
+            </button>
+            <a href="/Admin/Roles" class="btn btn-danger">
+                <i class="fas fa-times"></i> Hủy
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <style>
+        .permission-category {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .category-title {
+            color: #495057;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .permission-checkbox {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            height: 100%;
+            transition: all 0.3s;
+        }
+
+        .permission-checkbox:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+        }
+
+        .permission-checkbox input[type="checkbox"]:checked + label {
+            color: #007bff;
+        }
+
+        .permission-checkbox label {
+            cursor: pointer;
+            margin-bottom: 0;
+            padding-left: 25px;
+        }
+    </style>
+}

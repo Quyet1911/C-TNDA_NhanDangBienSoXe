@@ -1,0 +1,145 @@
+@model Permission
+@{
+    ViewData["Title"] = $"Chi tiết quyền: {Model.Name}";
+}
+
+<div class="admin-table-card mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3 class="table-title mb-0">
+            <i class="fas fa-key"></i>
+            Chi tiết quyền
+        </h3>
+        <div>
+            <a href="/Admin/Permissions/Edit/@Model.PermissionId" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Sửa
+            </a>
+            <a href="/Admin/Permissions" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Thông tin cơ bản -->
+    <div class="col-md-5">
+        <div class="admin-table-card h-100">
+            <h5 class="mb-3"><i class="fas fa-info-circle text-primary"></i> Thông tin quyền</h5>
+            <hr>
+            <table class="table table-borderless">
+                <tr>
+                    <th style="width: 40%">ID:</th>
+                    <td><strong>#@Model.PermissionId</strong></td>
+                </tr>
+                <tr>
+                    <th>Tên quyền:</th>
+                    <td><span class="badge bg-primary fs-6">@Model.Name</span></td>
+                </tr>
+                <tr>
+                    <th>Mã quyền:</th>
+                    <td><code class="bg-light px-2 py-1 rounded fs-6">@Model.Code</code></td>
+                </tr>
+                <tr>
+                    <th>Danh mục:</th>
+                    <td>
+                        <span class="badge bg-info">
+                            <i class="fas fa-folder"></i> @(Model.Category ?? "Chưa phân loại")
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Mô tả:</th>
+                    <td>@(Model.Description ?? "<i class='text-muted'>Không có mô tả</i>")</td>
+                </tr>
+                <tr>
+                    <th>Số vai trò sử dụng:</th>
+                    <td>
+                        <span class="badge bg-success">
+                            <i class="fas fa-user-shield"></i> @Model.RolePermissions.Count vai trò
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Danh sách vai trò sử dụng quyền này -->
+    <div class="col-md-7">
+        <div class="admin-table-card h-100">
+            <h5 class="mb-3"><i class="fas fa-user-shield text-success"></i> Vai trò được gán quyền này</h5>
+            <hr>
+            @if (Model.RolePermissions.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên vai trò</th>
+                                <th>Mô tả</th>
+                                <th>Ngày gán</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rp in Model.RolePermissions.OrderBy(rp => rp.Role.Name))
+                            {
+                                <tr>
+                                    <td><strong>#@rp.Role.RoleId</strong></td>
+                                    <td>
+                                        <i class="fas fa-user-tag text-primary me-1"></i>
+                                        <strong>@rp.Role.Name</strong>
+                                    </td>
+                                    <td class="text-muted">@(rp.Role.Description ?? "N/A")</td>
+                                    <td>
+                                        <small>@rp.GrantedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        <a href="/Admin/Roles/Details/@rp.Role.RoleId" class="btn btn-sm btn-info" title="Xem vai trò">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-users-slash fa-3x mb-3"></i>
+                    <p>Quyền này chưa được gán cho vai trò nào</p>
+                    <a href="/Admin/Roles" class="btn btn-primary btn-sm">
+                        <i class="fas fa-user-shield"></i> Quản lý vai trò
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+@* 
+<!-- Hướng dẫn sử dụng -->
+<div class="admin-table-card mt-4">
+    <h5 class="mb-3"><i class="fas fa-code text-warning"></i> Cách sử dụng trong code</h5>
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <h6>Trong Controller:</h6>
+            <pre class="bg-dark text-light p-3 rounded"><code>[Authorize(Policy = "Can@(Model.Code.Replace("_", ""))")]
+public IActionResult YourAction()
+{
+    // Code here
+}</code></pre>
+        </div>
+        <div class="col-md-6">
+            <h6>Trong View (kiểm tra quyền):</h6>
+            <pre class="bg-dark text-light p-3 rounded"><code>@@if ((await AuthorizationService
+    .AuthorizeAsync(User, "Can@(Model.Code.Replace("_", ""))")).Succeeded)
+{
+    // Hiển thị nội dung
+}</code></pre>
+        </div>
+    </div>
+</div>
+ *@

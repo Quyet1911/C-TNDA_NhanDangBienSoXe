@@ -1,0 +1,104 @@
+/* User Details Styles */
+
+.user-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.user-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+}
+
+.user-info-item i {
+    font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
+    margin-top: 0.25rem;
+}
+
+.user-info-item small {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 0;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    border: 2px solid #e9ecef;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Role Card */
+.role-card {
+    background: #f8f9fa;
+    transition: all 0.2s;
+}
+
+.role-card:hover {
+    background: #e9ecef;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+.role-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Permission Item */
+.permission-item {
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+}
+
+.permission-item:hover {
+    background: #e9ecef !important;
+    transform: translateX(4px);
+}
+
+/* Avatar */
+.avatar-placeholder {
+    position: relative;
+}
+
+/* Accordion Customization */
+.accordion-button:not(.collapsed) {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0,0,0,.125);
+}

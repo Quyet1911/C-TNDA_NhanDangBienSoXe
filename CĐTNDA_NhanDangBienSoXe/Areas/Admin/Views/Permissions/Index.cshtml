@@ -1,0 +1,179 @@
+@model IEnumerable<Permission>
+@{
+    ViewData["Title"] = "Quản lý quyền";
+}
+
+<!-- Thông báo -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Header & Filter -->
+<div class="admin-table-card mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label"><i class="fas fa-filter"></i> Lọc theo danh mục</label>
+            <select name="category" class="form-select">
+                <option value="">Tất cả danh mục</option>
+                @if (ViewBag.Categories != null)
+                {
+                    foreach (var cat in (List<string>)ViewBag.Categories)
+                    {
+                        <option value="@cat" selected="@(ViewBag.SelectedCategory == cat)">@cat</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-8 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Lọc
+            </button>
+            <a href="/Admin/Permissions" class="btn btn-secondary">
+                <i class="fas fa-redo"></i> Reset
+            </a>
+            <a href="/Admin/Roles" class="btn btn-info ms-auto">
+                <i class="fas fa-user-shield"></i> Quản lý vai trò
+            </a>
+            <a href="/Admin/Permissions/Create" class="btn btn-success">
+                <i class="fas fa-plus"></i> Thêm quyền
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Permissions Table -->
+<div class="admin-table-card">
+    <div class="table-header">
+        <h3 class="table-title">
+            <i class="fas fa-key"></i>
+            Danh sách quyền (@Model.Count())
+        </h3>
+    </div>
+
+    @if (Model.Any())
+    {
+        var permissionGroups = Model.GroupBy(p => p.Category ?? "Khác").OrderBy(g => g.Key);
+
+        @foreach (var group in permissionGroups)
+        {
+            <div class="permission-group mb-4">
+                <h5 class="group-title">
+                    <i class="fas fa-folder-open"></i> @group.Key
+                    <span class="badge bg-secondary ms-2">@group.Count()</span>
+                </h5>
+
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px">ID</th>
+                                <th>Tên quyền</th>
+                                <th>Mã quyền</th>
+                                <th>Mô tả</th>
+                                <th style="width: 180px">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var permission in group.OrderBy(p => p.Name))
+                            {
+                                <tr>
+                                    <td><strong>#@permission.PermissionId</strong></td>
+                                    <td>
+                                        <i class="fas fa-shield-alt text-primary"></i>
+                                        <strong>@permission.Name</strong>
+                                    </td>
+                                    <td>
+                                        <code class="bg-light px-2 py-1 rounded">@permission.Code</code>
+                                    </td>
+                                    <td>@(permission.Description ?? "N/A")</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="/Admin/Permissions/Details/@permission.PermissionId" class="btn btn-sm btn-info" title="Chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="/Admin/Permissions/Edit/@permission.PermissionId" class="btn btn-sm btn-warning" title="Sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="deletePermission(@permission.PermissionId, '@permission.Name')" title="Xóa">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-key fa-3x mb-3"></i>
+            <p>Chưa có quyền nào</p>
+            <a href="/Admin/Permissions/Create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Thêm quyền đầu tiên
+            </a>
+        </div>
+    }
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        function deletePermission(id, name) {
+            if (confirm(`Bạn có chắc muốn xóa quyền "${name}"?\nHành động này không thể hoàn tác.`)) {
+                const form = document.getElementById('deleteForm');
+                form.action = `/Admin/Permissions/Delete/${id}`;
+                form.submit();
+            }
+        }
+
+        // Auto-dismiss alerts
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+
+    <style>
+        .permission-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .group-title {
+            color: #495057;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+}

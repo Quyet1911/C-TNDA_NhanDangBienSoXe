@@ -1,0 +1,118 @@
+@model RoleWithPermissionsViewModel
+@{
+    ViewData["Title"] = $"Chi tiết vai trò: {Model.Name}";
+}
+
+<div class="admin-table-card mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3 class="table-title mb-0">
+            <i class="fas fa-user-shield"></i>
+            Chi tiết vai trò
+        </h3>
+        <div>
+            <a href="/Admin/Roles/Edit/@Model.RoleId" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Sửa
+            </a>
+            <a href="/Admin/Roles" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Thông tin cơ bản -->
+    <div class="col-md-4">
+        <div class="admin-table-card h-100">
+            <h5 class="mb-3"><i class="fas fa-info-circle text-primary"></i> Thông tin cơ bản</h5>
+            <hr>
+            <table class="table table-borderless">
+                <tr>
+                    <th style="width: 40%">ID:</th>
+                    <td><strong>#@Model.RoleId</strong></td>
+                </tr>
+                <tr>
+                    <th>Tên vai trò:</th>
+                    <td><span class="badge bg-primary fs-6">@Model.Name</span></td>
+                </tr>
+                <tr>
+                    <th>Mô tả:</th>
+                    <td>@(Model.Description ?? "<i class='text-muted'>Không có</i>")</td>
+                </tr>
+                <tr>
+                    <th>Số người dùng:</th>
+                    <td>
+                        <span class="badge bg-info">
+                            <i class="fas fa-users"></i> @Model.UserCount người
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Số quyền:</th>
+                    <td>
+                        <span class="badge bg-success">
+                            <i class="fas fa-key"></i> @Model.Permissions.Count quyền
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Danh sách quyền -->
+    <div class="col-md-8">
+        <div class="admin-table-card h-100">
+            <h5 class="mb-3"><i class="fas fa-key text-success"></i> Danh sách quyền được gán</h5>
+            <hr>
+            @if (Model.Permissions.Any())
+            {
+                var groupedPermissions = Model.Permissions
+                    .GroupBy(p => p.Category ?? "Khác")
+                    .OrderBy(g => g.Key);
+
+                foreach (var group in groupedPermissions)
+                {
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">
+                            <i class="fas fa-folder"></i> @group.Key
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tên quyền</th>
+                                        <th>Mã</th>
+                                        <th>Mô tả</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var perm in group.OrderBy(p => p.Name))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-check-circle text-success me-1"></i>
+                                                <strong>@perm.Name</strong>
+                                            </td>
+                                            <td><code>@perm.Code</code></td>
+                                            <td class="text-muted">@(perm.Description ?? "N/A")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-ban fa-3x mb-3"></i>
+                    <p>Vai trò này chưa được gán quyền nào</p>
+                    <a href="/Admin/Roles/Edit/@Model.RoleId" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Gán quyền ngay
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
