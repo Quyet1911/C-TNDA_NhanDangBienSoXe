@@ -100,12 +100,6 @@
                                     <a href="/Admin/Roles/Details/@role.RoleId" class="btn btn-sm btn-info" title="Chi tiết">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    @if (!role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteRole(@role.RoleId, '@role.Name', @role.UserRoles.Count)" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    }
                                 </div>
                             </td>
                         </tr>

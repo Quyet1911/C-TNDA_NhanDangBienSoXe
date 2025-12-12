@@ -120,12 +120,6 @@
                                     <button type="button" class="btn btn-sm btn-info" onclick="toggleStatus(@user.UserId)" title="Bật/Tắt">
                                         <i class="fas fa-power-off"></i>
                                     </button>
-                                    @if (user.UserName != User.Identity?.Name)
-                                    {
-                                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteUser(@user.UserId, '@user.UserName')" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    }
                                 </div>
                             </td>
                         </tr>

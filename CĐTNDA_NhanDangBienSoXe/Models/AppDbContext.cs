@@ -54,6 +54,13 @@ namespace CĐTNDA_NhanDangBienSoXe.Models
             modelBuilder.Entity<Permission>()
                 .HasIndex(p => p.Code)
                 .IsUnique();
+
+            // Cấu hình AuditLog - khi xóa User thì set UserId = NULL
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }
